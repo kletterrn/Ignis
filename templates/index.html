@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8f5">
+  <meta name="description" content="Project Ignis zeigt satellitengestützte Wärmeerkennungen auf einer übersichtlichen Karte.">
+  <title>Project Ignis – Waldbrände im Blick</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js" defer></script>
+  <script id="app-config" type="application/json">{{ config_data|tojson }}</script>
+  <script src="{{ url_for('static', filename='hotzones.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='maps.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='verification.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="/" aria-label="Project Ignis – Startseite"><span class="brand-icon" aria-hidden="true">✳</span> Project Ignis</a>
+      <span class="header-subtitle">Waldbrände im Blick</span>
+      <span id="clock" class="clock" aria-label="UTC-Datum">–</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">SATELLITENGESTÜTZTE BEOBACHTUNG</p>
+        <h1 id="page-title">Wo wird Wärme erkannt?</h1>
+        <p class="intro-text">Aktuelle Wärmehinweise auf einer Karte – einfach und verständlich.</p>
+      </div>
+      <button id="refresh" class="button button-primary" type="button"><span aria-hidden="true">↻</span> Daten aktualisieren</button>
+    </section>
+
+    <div class="connection-strip" role="status" aria-live="polite">
+      <div class="connection-main"><i id="connection-dot" aria-hidden="true"></i><strong id="connection-label">Satellitendaten werden geladen …</strong></div>
+      <span id="checked-at">Noch nicht aktualisiert</span>
+    </div>
+
+    <section class="metrics" aria-label="Überblick">
+      <article class="metric-card"><span class="metric-label">Wärmehinweise</span><div id="total" class="metric-value">–</div><p id="window-caption" class="metric-caption">In den letzten 24 Stunden</p></article>
+      <article class="metric-card"><span class="metric-label">Hohe Sicherheit</span><div id="high" class="metric-value">–</div><p class="metric-caption">Hinweise mit hoher Einstufung</p></article>
+      <article class="metric-card"><span class="metric-label">Wärmeleistung</span><div class="metric-value"><span id="power">–</span> <small>MW</small></div><p class="metric-caption">Summe der angezeigten Hinweise</p></article>
+    </section>
+
+    <section class="monitor-grid" aria-label="Karte und Wärmehinweise">
+      <article class="map-card">
+        <div class="section-header">
+          <div><h2>Wärmekarte</h2><p id="region-caption">Beobachtete Region</p></div>
+          <button class="icon-button" id="fit-map" title="Zur Region zurück" aria-label="Zur Region zurück" type="button">⌖</button>
+        </div>
+        <div class="map-toolbar">
+          <div class="time-control"><span class="control-label">Zeitraum</span><div class="segmented" role="group" aria-label="Zeitraum"><button type="button" data-hours="1" aria-pressed="false">1 Std.</button><button type="button" data-hours="6" aria-pressed="false">6 Std.</button><button type="button" data-hours="12" aria-pressed="false">12 Std.</button><button type="button" data-hours="24" class="selected" aria-pressed="true">24 Std.</button></div></div>
+          <label class="map-select-label" for="basemap"><span class="control-label">Kartenansicht</span><select id="basemap"><option value="streets" selected>Standardkarte</option><option value="dark">Dunkle Karte</option><option value="imagery">Satellitenbild</option></select></label>
+        </div>
+        <div class="layer-row"><label class="layer-toggle"><input type="checkbox" id="show-hotspots" checked> Wärmehinweise</label><label class="layer-toggle"><input type="checkbox" id="show-zones" checked> Verdichtete Bereiche</label></div>
+        <p id="basemap-note" class="basemap-note" role="status">Kartendaten werden geladen …</p>
+        <div class="map-wrap"><div id="map" aria-label="Interaktive Karte mit Wärmehinweisen"></div><div id="map-error" class="map-message" role="alert" hidden></div><div class="map-legend"><span><i class="legend-dot high"></i> Hoch</span><span><i class="legend-dot nominal"></i> Mittel</span><span><i class="legend-dot low"></i> Niedrig / unbekannt</span><span><i class="zone-key"></i> Verdichteter Bereich</span></div></div>
+        <div class="map-footer"><span id="mapped-count">0 Hinweise auf der Karte</span><strong id="zone-count">0 verdichtete Bereiche</strong></div>
+      </article>
+
+      <article class="detections-card" id="detections">
+        <div class="section-header"><div><h2>Wärmehinweise <span id="list-count" class="count">0</span></h2><p>Eintrag auswählen, um ihn auf der Karte zu sehen.</p></div></div>
+        <div class="list-filters"><label class="search-box"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Satellit oder Koordinaten suchen" aria-label="Wärmehinweise durchsuchen"></label><select id="confidence" aria-label="Nach Sicherheit filtern"><option value="all">Alle Einstufungen</option><option value="high">Hohe Sicherheit</option><option value="nominal">Mittlere Sicherheit</option><option value="low">Niedrig / unbekannt</option></select></div>
+        <div class="detection-list" id="detection-list" aria-live="polite"><div class="empty-state"><span class="empty-icon">◎</span><h3>Daten werden geladen</h3><p>Wärmehinweise werden abgerufen.</p></div></div>
+        <div class="list-footer"><span id="list-summary">NASA FIRMS</span><button id="export" class="text-button" type="button" disabled>CSV herunterladen ↗</button></div>
+      </article>
+    </section>
+
+    <details class="settings-panel">
+      <summary>Satelliten auswählen <span id="network-summary" class="tag">Verbindung wird geprüft</span></summary>
+      <div class="settings-content"><p>Wähle die Datenquellen aus. Ein Satellit reicht für den Anfang – weitere kannst du bei Bedarf aktivieren.</p><div id="satellite-sources" class="satellite-sources"></div><p id="source-message" class="source-message" role="status">Daten werden geladen …</p><span id="source-caption" class="source-caption"></span></div>
+    </details>
+
+    <footer class="page-footer"><span>Project Ignis · Satellitengestützte Waldbrandbeobachtung</span><span>Automatische Aktualisierung alle 10 Minuten</span></footer>
+  </main>
+</body>
+</html>
