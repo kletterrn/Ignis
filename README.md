@@ -1,5 +1,5 @@
 1. PowerShell in diesem Ordner öffnen.
-2. Abhängigkeiten installieren:
+2. Requirements installieren:
 
    ```powershell
    python.exe -m pip install -r requirements.txt
