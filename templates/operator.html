@@ -1,0 +1,32 @@
+<section id="operator-console" class="operator-console" aria-label="Lokale Einsatzbearbeitung">
+  <p class="eyebrow">LOKALER OPERATOR / ROHMATERIAL BLEIBT AUF DIESEM PC</p><h2>Belege prüfen. Flächen freigeben.</h2>
+  <p id="operator-status" role="status" aria-live="polite">Lokale Konsole bereit.</p><p>Der experimentelle Kameraklassifikator kann Rauch übersehen. Auch Bilder ohne Alarm manuell prüfen; Scores sind keine kalibrierten Wahrscheinlichkeiten.</p>
+  <div class="operator-actions"><button id="collect-local" type="button">Satelliten & Wetter abrufen</button><button id="sync-cloud" type="button">Ausstehende Veröffentlichungen senden</button></div>
+  <div class="operator-grid">
+    <article class="platform-card"><h3>1 / Material & Kamera</h3>
+      <form id="upload-form"><label>Video, Bildfolge, GeoTIFF oder GeoJSON<input name="file" type="file" multiple required accept=".mp4,.avi,.mov,.mkv,.jpg,.jpeg,.png,.tif,.tiff,.geojson,.json"></label><button>Hochladen</button></form>
+      <p id="upload-result"></p><img id="raster-preview" alt="Vorschau der georeferenzierten Aufnahme" hidden>
+      <form id="camera-form"><label>Upload-ID<input name="upload_id" id="camera-upload"></label><label>Oder RTSP-Adresse (lokal gespeichert)<input name="rtsp" type="password" autocomplete="off" placeholder="rtsp://…"></label><label>Aufnahmebeginn (UTC, optional)<input name="acquired_at" type="datetime-local"></label><button>Erkennung starten</button><button id="camera-stop" type="button">Stoppen</button></form>
+      <div id="camera-jobs" class="review-list"></div><h4>Prüfwarteschlange</h4><div id="evidence-list" class="review-list"></div>
+    </article>
+    <article class="platform-card"><h3>2 / Ereignis & Veröffentlichung</h3>
+      <form id="incident-form"><label>Name<input name="title" maxlength="120" required></label><label>Beschreibung<textarea name="description" maxlength="2000"></textarea></label><p>Markierte Kamerabelege werden dem Ereignis zugeordnet. Veröffentlichung ist eine ausdrückliche Freigabe dieser ausgewählten Vorschaubilder.</p><button>Ereignis anlegen</button></form>
+      <div id="operator-incidents" class="review-list"></div>
+    </article>
+    <article class="platform-card"><h3>3 / Satellitenbilder & dNBR</h3>
+      <form id="scene-form"><label>Region [West,Süd,Ost,Nord]<input name="bbox" id="scene-bbox" value="13.9,50.8,14.0,50.9" required></label><label>Von (UTC)<input name="start" type="datetime-local" required></label><label>Bis (UTC)<input name="end" type="datetime-local" required></label><button>Sentinel-2-Aufnahmen suchen</button></form>
+      <div id="scene-list"></div>
+      <form id="outline-form"><label>Vorher Upload-ID<input name="before" id="outline-before" required></label><label>Nachher Upload-ID<input name="after" id="outline-after" required></label><label>dNBR-Schwelle<input name="threshold" type="number" value="0.2" step="0.05" min="0.05" max="1"></label><button>Umriss vorschlagen</button></form>
+      <p class="metric-caption">Download benötigt Copernicus OAuth-Zugang. Vorschläge müssen anhand der Originalbilder geprüft werden. Bewölkung kann die gemeinsame Abdeckung verhindern.</p>
+    </article>
+    <article class="platform-card"><h3>4 / Fläche bearbeiten</h3>
+      <form id="boundary-form"><label>Ereignis<select name="incident_id" id="boundary-incident" required></select></label><label>Aufnahmezeit (UTC)<input name="acquired_at" id="boundary-time" type="datetime-local" required></label>
+        <label>Art<select name="footprint_kind"><option value="burned">Kartierte verbrannte Fläche</option><option value="active">Geprüfte aktive Brandfläche</option></select></label><label>Methode<input name="method" id="boundary-method" value="manual"></label><label>Quellennachweis<input name="provenance" id="boundary-provenance" required></label><label>Auflösung in Metern (falls bekannt)<input name="resolution_m" type="number" min="0.01" step="0.01"></label>
+        <div class="operator-actions"><button id="draw-start" type="button">Polygon auf Karte zeichnen</button><button id="draw-finish" type="button">Zeichnen beenden</button></div>
+        <label>GeoJSON-Geometrie (Koordinaten und Löcher editierbar)<textarea name="geometry" id="boundary-geometry" rows="5" required placeholder='{"type":"Polygon","coordinates":[…]}'></textarea></label>
+        <label>Tatsächlich beobachtete Abdeckung (GeoJSON)<textarea name="coverage" id="boundary-coverage" rows="4" required></textarea></label><button>Als neue Version speichern</button>
+      </form><div id="perimeter-review" class="review-list"></div>
+      <form id="compare-form"><label>Frühere Fläche<select name="before" id="compare-before"></select></label><label>Spätere Fläche<select name="after" id="compare-after"></select></label><button>Gemessene Änderung berechnen</button></form><pre id="compare-result"></pre>
+    </article>
+  </div>
+</section>

@@ -14,6 +14,8 @@
   <script src="{{ url_for('static', filename='maps.js') }}" defer></script>
   <script src="{{ url_for('static', filename='verification.js') }}" defer></script>
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='platform.js') }}" defer></script>
+  {% if config_data.operator %}<script src="{{ url_for('static', filename='operator.js') }}" defer></script>{% endif %}
 </head>
 <body>
   <header class="site-header">
@@ -27,9 +29,9 @@
   <main>
     <section class="intro" aria-labelledby="page-title">
       <div>
-        <p class="eyebrow">SATELLITENGESTÜTZTE BEOBACHTUNG</p>
-        <h1 id="page-title">Wo wird Wärme erkannt?</h1>
-        <p class="intro-text">Aktuelle Wärmehinweise auf einer Karte – einfach und verständlich.</p>
+        <p class="eyebrow">IGNIS / FELDPILOT DEUTSCHLAND</p>
+        <h1 id="page-title">Feuer erkennen. Veränderungen verstehen.</h1>
+        <p class="intro-text">Satellitenhinweise, geprüfte Brandflächen und Wetter im zeitlichen Zusammenhang.</p>
       </div>
       <button id="refresh" class="button button-primary" type="button"><span aria-hidden="true">↻</span> Daten aktualisieren</button>
     </section>
@@ -41,7 +43,7 @@
 
     <section class="metrics" aria-label="Überblick">
       <article class="metric-card"><span class="metric-label">Wärmehinweise</span><div id="total" class="metric-value">–</div><p id="window-caption" class="metric-caption">In den letzten 24 Stunden</p></article>
-      <article class="metric-card"><span class="metric-label">Hohe Sicherheit</span><div id="high" class="metric-value">–</div><p class="metric-caption">Hinweise mit hoher Einstufung</p></article>
+      <article class="metric-card"><span class="metric-label">Hohe Einstufung</span><div id="high" class="metric-value">–</div><p class="metric-caption">Quelleneinstufung der Wärmehinweise</p></article>
       <article class="metric-card"><span class="metric-label">Wärmeleistung</span><div class="metric-value"><span id="power">–</span> <small>MW</small></div><p class="metric-caption">Summe der angezeigten Hinweise</p></article>
     </section>
 
@@ -58,7 +60,7 @@
         <div class="layer-row"><label class="layer-toggle"><input type="checkbox" id="show-hotspots" checked> Wärmehinweise</label><label class="layer-toggle"><input type="checkbox" id="show-zones" checked> Verdichtete Bereiche</label></div>
         <p id="basemap-note" class="basemap-note" role="status">Kartendaten werden geladen …</p>
         <div class="map-wrap"><div id="map" aria-label="Interaktive Karte mit Wärmehinweisen"></div><div id="map-error" class="map-message" role="alert" hidden></div><div class="map-legend"><span><i class="legend-dot high"></i> Hoch</span><span><i class="legend-dot nominal"></i> Mittel</span><span><i class="legend-dot low"></i> Niedrig / unbekannt</span><span><i class="zone-key"></i> Verdichteter Bereich</span></div></div>
-        <div class="map-footer"><span id="mapped-count">0 Hinweise auf der Karte</span><strong id="zone-count">0 verdichtete Bereiche</strong></div>
+        <div class="map-footer"><span id="mapped-count">0 Hinweise auf der Karte</span><strong id="zone-count">0 verdichtete Bereiche</strong></div><p id="verification-summary" class="basemap-note" aria-live="polite"></p>
       </article>
 
       <article class="detections-card" id="detections">
@@ -69,12 +71,24 @@
       </article>
     </section>
 
+    <section class="platform-grid" aria-label="Brandereignisse und Wetter">
+      <article class="platform-card"><p class="eyebrow">GEPRÜFTE EREIGNISSE</p><h2>Brandflächen im Verlauf</h2>
+        <div class="layer-row"><label><input id="show-boundaries" type="checkbox" checked> Geprüfte Flächen</label><label><input id="show-growth" type="checkbox" checked> Flächenzuwachs</label><label><input id="show-wind" type="checkbox" checked> Wind</label></div>
+        <div id="incident-list" class="incident-list" aria-live="polite">Ereignisse werden geladen …</div>
+        <div class="timeline"><button id="play-timeline" type="button">▶ Verlauf</button><input id="timeline" type="range" min="0" max="0" value="0" aria-label="Beobachtungszeitpunkt"><output id="timeline-date">Keine Flächenbeobachtung</output></div>
+        <div id="incident-detail" class="detail-panel">Satellitenhinweise sind unbestätigte Wärmebeobachtungen. Geprüfte Flächen erscheinen nach Freigabe.</div>
+        <button id="export-geojson" type="button">Geprüfte Flächen als GeoJSON</button>
+      </article>
+      <article class="platform-card"><p class="eyebrow">WETTERKONTEXT</p><h2>Wind & Bedingungen</h2><label>Modellpunkt <select id="weather-location" aria-label="Wetterstandort"></select></label><div id="weather-detail" class="weather-detail">Wetter wird geladen …</div><p class="metric-caption">Modellierter Wind zeigt die Luftbewegung. Die Feuerfront wird daraus nicht abgeleitet.</p><div id="feed-health" class="feed-health"></div></article>
+    </section>
+    {% if config_data.operator %}{% include 'operator.html' %}{% endif %}
+
     <details class="settings-panel">
       <summary>Satelliten auswählen <span id="network-summary" class="tag">Verbindung wird geprüft</span></summary>
       <div class="settings-content"><p>Wähle die Datenquellen aus. Ein Satellit reicht für den Anfang – weitere kannst du bei Bedarf aktivieren.</p><div id="satellite-sources" class="satellite-sources"></div><p id="source-message" class="source-message" role="status">Daten werden geladen …</p><span id="source-caption" class="source-caption"></span></div>
     </details>
 
-    <footer class="page-footer"><span>Project Ignis · Satellitengestützte Waldbrandbeobachtung</span><span>Automatische Aktualisierung alle 10 Minuten</span></footer>
+    <footer class="page-footer"><span>Project Ignis · Nichtkommerzieller Feldpilot · Keine Einsatzfreigabe</span><span>Cloud-Abfrage alle 15 Minuten · Feedalter beachten</span></footer>
   </main>
 </body>
 </html>
