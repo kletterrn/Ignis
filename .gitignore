@@ -7,6 +7,7 @@ __pycache__/
 data/
 outputs/
 *.egg-info/
+*.tsbuildinfo
 site/node_modules/
 site/dist/
 site/.wrangler/
