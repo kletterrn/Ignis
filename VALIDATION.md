@@ -29,6 +29,9 @@ This is an implemented field-pilot platform, with significant detection and fiel
   fixtures, produced the expected values and download links, and retained result
   history across reload. Shared 3D imagery terrain rendered successfully after
   the renderer update. A forced terrain-provider outage was not browser-tested.
+- The first cloud CI run exposed an unbounded test dependency install selecting
+  OpenCV 5 despite the application requiring OpenCV <5. CI now uses the tested
+  direct versions from uv.lock via requirements-ci.txt, without PyTorch weights.
 
 ## Passed locally
 
