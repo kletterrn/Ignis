@@ -32,6 +32,7 @@ This is an implemented field-pilot platform, with significant detection and fiel
 - The first cloud CI run exposed an unbounded test dependency install selecting
   OpenCV 5 despite the application requiring OpenCV <5. CI now uses the tested
   direct versions from uv.lock via requirements-ci.txt, without PyTorch weights.
+  The corrected [GitHub run 39166712248](https://github.com/kletterrn/Ignis/actions/runs/39166712248) passed both core and Site jobs.
 
 ## Passed locally
 
@@ -84,7 +85,7 @@ Three consecutive positive samples are needed for an automatic review item; huma
 - Live collection/publication of five DWD ICON / Open-Meteo model points succeeded. All four FIRMS sources report `configuration_missing`, as requested. No synthetic fire events are published.
 - Anonymous public reads work. Unauthenticated cloud writes return 401; `/operator` is absent from the hosted Site.
 - Public browser review showed the map, unconfigured satellite state, live weather values and source-health details without JavaScript errors.
-- [GitHub CI](https://github.com/kletterrn/Ignis/actions/runs/39164781109) passed for the implementation. [Cloud collector run 39164873501](https://github.com/kletterrn/Ignis/actions/runs/39164873501) completed successfully on GitHub and updated the public weather data at 20:47 UTC; the schedule targets minutes 7, 22, 37 and 52. This verifies the cloud execution path independently of local processing; the PC was not physically powered off during the test. Scheduled timing remains best effort. Camera tests requiring OpenCV/PyTorch run locally; the lightweight cloud CI intentionally skips those optional-dependency tests.
+- [GitHub CI](https://github.com/kletterrn/Ignis/actions/runs/39164781109) passed for the implementation. [Cloud collector run 39164873501](https://github.com/kletterrn/Ignis/actions/runs/39164873501) completed successfully on GitHub and updated the public weather data at 20:47 UTC; the schedule targets minutes 7, 22, 37 and 52. This verifies the cloud execution path independently of local processing; the PC was not physically powered off during the test. Scheduled timing remains best effort. OpenCV sensor and camera-worker checks run in CI; the PyTorch-specific classifier-detail check runs locally and is skipped by the lightweight CI runtime.
 
 ## Intentionally unconfigured or still unverified
 
