@@ -1,0 +1,31 @@
+{
+  "frozen_before_evaluation": "2026-10-18",
+  "development_only": ["20260909_GettyFire_wilson-w-mobo-c", "20261015_HendersonFire_buff-s-mobo-c"],
+  "model_revision": "fe7d3a0c3710c1c4d61163058182ff7c44e34f31",
+  "model_sha256": "dcf513579615d7b701fbab2d1633d383684fd5885210fb0a46fae8aae29459aa",
+  "threshold": 0.5,
+  "archive_stride": 5,
+  "archive_holdout": [
+    "20260319_CrosleyFire_hp-w-mobo-c",
+    "20260519_TusilFire_mlo-s-mobo-c",
+    "20260629_JunctionFire_bm-e-mobo-c",
+    "20260816_SorrentoFire_sdsc-e-mobo-c"
+  ],
+  "video_revision": "6aff09d7baa27425f31d1df685284c26cbffe7af",
+  "continuous_video": [
+    {"name":"non_fire_patrolbot_onboard", "fire":false},
+    {"name":"cleaner", "fire":false},
+    {"name":"coolerbot", "fire":false},
+    {"name":"rover", "fire":false},
+    {"name":"icra", "fire":false},
+    {"name":"hand_held_camera_wildfire", "fire":true},
+    {"name":"hand_held_batteries_night", "fire":true}
+  ],
+  "temporal_policy": "5 spatially overlapping samples spanning >=4 s, gap <=6 s; rearm after 30 s without a positive sample",
+  "limitations": [
+    "Archive frames are minute-cadence camera imagery; no continuous false-alert rate is inferred from them.",
+    "Continuous FURG clips predate model training; their membership in upstream training data is unknown.",
+    "The fixed model predates all selected HPWREN holdout events; no tuning on holdout scores is permitted.",
+    "Smoke-only object detector; a smokeless flame may be missed. No operational acceptance is inferred."
+  ]
+}

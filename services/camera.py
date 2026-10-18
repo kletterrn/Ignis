@@ -6,6 +6,8 @@ from pathlib import Path
 from uuid import uuid4
 
 import cv2
+import numpy as np
+import httpx
 from PIL import Image, ImageOps
 from services.store import utcnow
 
@@ -14,6 +16,7 @@ WEIGHTS_URL = "https://github.com/pyronear/pyro-vision/releases/download/v0.2.0/
 WEIGHTS_SHA256 = "e536564ef97d2aed90a7572f08ca752087fc10f7c3544911edca70f473d55fc7"
 
 class Classifier:
+    """Retired crop classifier, retained only for reproducible before/after evaluation."""
     def __init__(self, root="data/models"):
         import torch
         from holocron.models import rexnet1_0x
@@ -42,6 +45,98 @@ class Classifier:
         tensor = self.torch.stack([self.normalize(self.to_tensor(ImageOps.pad(crop,(384,256),method=Image.Resampling.BILINEAR,color=0))) for crop in crops]).to(self.device)
         with self.torch.inference_mode():
             return float(self.model(tensor).sigmoid().max().item())
+
+
+DETECTOR_URL='https://huggingface.co/pyronear/yolov11s/resolve/fe7d3a0c3710c1c4d61163058182ff7c44e34f31/yolov11s.onnx'
+DETECTOR_SHA256='dcf513579615d7b701fbab2d1633d383684fd5885210fb0a46fae8aae29459aa'
+DETECTION_THRESHOLD=.5
+
+
+class SmokeDetector:
+    """Official fixed-shape ONNX smoke detector; scores are not probabilities."""
+    name='Pyronear YOLO11s 2025-07-22'
+    device='ONNX Runtime CPU'
+
+    def __init__(self,root='data/models'):
+        import onnxruntime as ort
+        path=Path(root)/'yolov11s-20250722.onnx';path.parent.mkdir(parents=True,exist_ok=True)
+        if not path.exists():
+            response=httpx.get(DETECTOR_URL,follow_redirects=True,timeout=120)
+            response.raise_for_status()
+            if hashlib.sha256(response.content).hexdigest()!=DETECTOR_SHA256:raise ValueError('Detector checksum mismatch')
+            temporary=path.with_suffix('.part');temporary.write_bytes(response.content);temporary.replace(path)
+        if hashlib.sha256(path.read_bytes()).hexdigest()!=DETECTOR_SHA256:raise ValueError('Detector checksum mismatch')
+        options=ort.SessionOptions();options.intra_op_num_threads=4
+        self.net=ort.InferenceSession(str(path),sess_options=options,providers=['CPUExecutionProvider'])
+        self.input=self.net.get_inputs()[0].name
+
+    def detect(self,image):
+        image=image.convert('RGB');w,h=image.size
+        views=[(0,0,w,h)]
+        if w>=1280 and h>=768:
+            views.extend((int(x*w),int(y*h),int((x+.5)*w),int((y+.5)*h)) for y in (0,.25,.5) for x in (0,.25,.5))
+        candidates=[]
+        for x1,y1,x2,y2 in views:
+            for item in self._detect(image.crop((x1,y1,x2,y2))):
+                a,b,c,d=item['box']
+                candidates.append({**item,'box':[(x1+a*(x2-x1))/w,(y1+b*(y2-y1))/h,(x1+c*(x2-x1))/w,(y1+d*(y2-y1))/h]})
+        boxes=[[p['box'][0],p['box'][1],p['box'][2]-p['box'][0],p['box'][3]-p['box'][1]] for p in candidates]
+        keep=cv2.dnn.NMSBoxes(boxes,[p['score'] for p in candidates],.25,.45)
+        return [candidates[i] for i in np.asarray(keep).reshape(-1)[:20]]
+
+    def _detect(self,image):
+        image=image.convert('RGB');w,h=image.size
+        ratio=min(1024/w,1024/h);rw,rh=round(w*ratio),round(h*ratio)
+        xpad,ypad=(1024-rw)//2,(1024-rh)//2
+        canvas=np.full((1024,1024,3),114,dtype='uint8')
+        canvas[ypad:ypad+rh,xpad:xpad+rw]=np.asarray(image.resize((rw,rh),Image.Resampling.BILINEAR))
+        tensor=canvas.transpose(2,0,1)[None].astype('float32')/255
+        output=self.net.run(None,{self.input:tensor})[0]
+        if output.shape!=(1,5,21504) or not np.isfinite(output).all():raise ValueError('Unexpected detector output')
+        boxes=[];scores=[]
+        for cx,cy,bw,bh,score in output[0].T:
+            if score<.25:continue
+            x1,y1=max(0,(cx-bw/2-xpad)/ratio),max(0,(cy-bh/2-ypad)/ratio)
+            x2,y2=min(w,(cx+bw/2-xpad)/ratio),min(h,(cy+bh/2-ypad)/ratio)
+            if x2<=x1 or y2<=y1:continue
+            boxes.append([float(x1),float(y1),float(x2-x1),float(y2-y1)]);scores.append(float(score))
+        keep=cv2.dnn.NMSBoxes(boxes,scores,.25,.45)
+        return [{'box':[boxes[i][0]/w,boxes[i][1]/h,(boxes[i][0]+boxes[i][2])/w,(boxes[i][1]+boxes[i][3])/h],
+                 'score':scores[i],'label':'smoke'} for i in np.asarray(keep).reshape(-1)[:20]]
+
+    def score(self,image):
+        return max((x['score'] for x in self.detect(image)),default=0.)
+
+
+def overlap(a,b):
+    x=max(0,min(a[2],b[2])-max(a[0],b[0]));y=max(0,min(a[3],b[3])-max(a[1],b[1]))
+    intersection=x*y
+    return intersection/max((a[2]-a[0])*(a[3]-a[1])+(b[2]-b[0])*(b[3]-b[1])-intersection,1e-12)
+
+
+class TemporalGate:
+    """Five spatially consistent samples; one review alert until 30 clear seconds."""
+    def __init__(self):
+        self.box=None;self.hits=0;self.first=None;self.previous=None
+        self.latched=False;self.last_positive=None
+
+    def update(self,second,regions):
+        if self.previous is not None and (second<=self.previous or second-self.previous>6):
+            self.hits=0;self.box=None;self.first=None
+        self.previous=second
+        candidates=[p for p in regions if p['score']>=DETECTION_THRESHOLD]
+        if not candidates:
+            self.hits=0;self.box=None;self.first=None
+            if self.last_positive is not None and second-self.last_positive>=30:self.latched=False
+            return None
+        matched=[p for p in candidates if self.box is not None and overlap(self.box,p['box'])>=.1]
+        item=max(matched or candidates,key=lambda p:p['score'])
+        if not matched:self.hits=0;self.first=second
+        self.hits+=1;self.box=item['box'];self.last_positive=second
+        if self.hits>=5 and second-self.first>=4 and not self.latched:
+            self.latched=True
+            return item
+        return None
 
 class CameraWorker:
     def __init__(self, store, root):
@@ -78,8 +173,10 @@ class CameraWorker:
         frames = queue.Queue(maxsize=2)
         capture_done = threading.Event()
         producer_error = []
+        job.setdefault('dropped_frames',0)
         def capture():
             cap = None
+            stream_started=time.monotonic();stream_offset=job.get('seconds',0)
             try:
                 if job["kind"] == "sequence":
                     paths = sorted(Path(job["source"]).glob("*"))
@@ -105,18 +202,17 @@ class CameraWorker:
                     index = int(job.get("seconds",0)*fps) if job["kind"] != "rtsp" else 0
                     if index: cap.set(cv2.CAP_PROP_POS_FRAMES,index)
                     last = -1
-                    started = time.monotonic()
                     while not self.stop_event.is_set():
                         ok,frame = cap.read()
                         if not ok: break
-                        second = int(time.monotonic()-started) if job["kind"] == "rtsp" else int(index/fps)
+                        second = int(stream_offset+time.monotonic()-stream_started) if job["kind"] == "rtsp" else int(index/fps)
                         index+=1
                         if second == last: continue
                         last=second
                         image=Image.fromarray(cv2.cvtColor(frame,cv2.COLOR_BGR2RGB))
                         if job["kind"] == "rtsp":
                             try: frames.put_nowait((float(second),image))
-                            except queue.Full: pass
+                            except queue.Full: job['dropped_frames']+=1
                         else:
                             while not self.stop_event.is_set():
                                 try: frames.put((float(second),image),timeout=.5); break
@@ -130,27 +226,33 @@ class CameraWorker:
                 if cap is not None: cap.release()
                 capture_done.set()
         try:
-            self.classifier = self.classifier or Classifier()
+            self.classifier = self.classifier or SmokeDetector()
             producer=threading.Thread(target=capture,daemon=True);producer.start()
-            hits, last_alert, previous_second = 0, -60., None
+            gate=TemporalGate()
             started=time.perf_counter();initial_frames=job['frames']
             while not (capture_done.is_set() and frames.empty()) and not self.stop_event.is_set():
                 try: second,image=frames.get(timeout=.5)
                 except queue.Empty: continue
-                score=self.classifier.score(image)
+                regions=self.classifier.detect(image)
+                score=max((p['score'] for p in regions),default=0.)
+                alert=gate.update(second,regions)
                 preview=self.root/(job['id']+'_current.jpg')
-                image.save(preview,quality=85)
+                annotated=image.copy()
+                from PIL import ImageDraw
+                draw=ImageDraw.Draw(annotated)
+                for region in regions:
+                    if region['score']<DETECTION_THRESHOLD:continue
+                    a,b,c,d=region['box'];box=(a*image.width,b*image.height,c*image.width,d*image.height)
+                    draw.rectangle(box,outline='#ff8833',width=3);draw.text((box[0],box[1]),f"smoke {region['score']:.2f}",fill='#ff8833')
+                annotated.save(preview,quality=85)
                 job['preview_path']=str(preview)
-                if previous_second is None or second-previous_second > 2: hits=0
-                previous_second=second
-                hits=hits+1 if score >= .7 else 0
-                job.update(frames=job["frames"]+1,seconds=second+1,score=score,device=self.classifier.device,status="running",updated_at=utcnow(),throughput_fps=(job["frames"]-initial_frames+1)/max(time.perf_counter()-started,.001))
+                job.update(frames=job["frames"]+1,seconds=second+1,score=score,regions=regions,model=self.classifier.name,confirmation_samples=gate.hits,
+                           alert_latched=gate.latched,device=self.classifier.device,status="running",updated_at=utcnow(),throughput_fps=(job["frames"]-initial_frames+1)/max(time.perf_counter()-started,.001))
                 self.store.put("jobs",job)
-                if hits >= 3 and second-last_alert >= 60:
+                if alert:
                     key=hashlib.sha256(f"{job['id']}:{int(second)//60}".encode()).hexdigest()[:32]
-                    path=self.root/(key+".jpg");image.save(path,quality=90)
-                    self.store.put("evidence",{"id":key,"job_id":job["id"],"observed_at":utcnow(),"acquired_at":job.get("acquired_at"),"offset_seconds":second,"model_score":score,"model":"PyroVision ReXNet v0.2.0","path":str(path),"review_state":"pending","georeferenced":False})
-                    last_alert=second
+                    path=self.root/(key+".jpg");annotated.save(path,quality=90)
+                    self.store.put("evidence",{"id":key,"job_id":job["id"],"observed_at":utcnow(),"acquired_at":job.get("acquired_at"),"offset_seconds":second,"model_score":score,"model":self.classifier.name,"regions":regions,"path":str(path),"review_state":"pending","georeferenced":False,"trigger":"spatial_temporal_smoke"})
             was_stopped=self.stop_event.is_set()
             self.stop_event.set();producer.join(timeout=12)
             job["status"]="failed" if producer_error else "stopped" if was_stopped else "completed"

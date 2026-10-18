@@ -239,7 +239,7 @@ def camera_api(action):
         import shutil
         key=uuid4().hex;path=Path(app.config["DATA_DIR"])/"evidence"/(key+'.jpg')
         path.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(job['preview_path'],path)
-        item={"id":key,"job_id":job['id'],"observed_at":utcnow(),"acquired_at":job.get('acquired_at'),"offset_seconds":job.get('seconds',0),"model_score":job.get('score',0),"model":"PyroVision ReXNet v0.2.0","path":str(path),"review_state":"pending","georeferenced":False,"trigger":"operator"}
+        item={"id":key,"job_id":job['id'],"observed_at":utcnow(),"acquired_at":job.get('acquired_at'),"offset_seconds":job.get('seconds',0),"model_score":job.get('score',0),"model":job.get('model','Unknown'),"regions":job.get('regions',[]),"path":str(path),"review_state":"pending","georeferenced":False,"trigger":"operator"}
         return jsonify(store.put('evidence',item)),201
     if action=="resume":
         job=store.get("jobs",data["id"])

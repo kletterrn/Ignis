@@ -158,15 +158,16 @@ def test_camera_temporal_confirmation(tmp_path):
     from PIL import Image
     from services.camera import CameraWorker
     root=tmp_path/'frames';root.mkdir()
-    for i in range(3):Image.new('RGB',(48,32)).save(root/f'{i}.jpg')
+    for i in range(6):Image.new('RGB',(48,32)).save(root/f'{i}.jpg')
     store=Store(tmp_path/'camera.sqlite');worker=CameraWorker(store,tmp_path/'evidence')
     class DeterministicClassifier:
         device='test'
-        def score(self,image):return .9
+        name='test detector'
+        def detect(self,image):return [{'score':.9,'box':[.1,.1,.3,.3]}]
     worker.classifier=DeterministicClassifier()
     key=worker.start(str(root),'sequence');worker.thread.join(timeout=10)
     assert store.get('jobs',key)['status']=='completed'
-    assert store.get('jobs',key)['frames']==3
+    assert store.get('jobs',key)['frames']==6
     assert len(store.all('evidence'))==1
 
 def test_high_resolution_local_signal_survives_downsampling():

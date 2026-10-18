@@ -1,0 +1,1626 @@
+{
+  "protocol_sha256": "120f76e0a10d2725544ed7ed6c99c692ff6374424b587c93953b6c8458d3d2bd",
+  "model_sha256": "dcf513579615d7b701fbab2d1633d383684fd5885210fb0a46fae8aae29459aa",
+  "threshold": 0.5,
+  "archive": {
+    "frames": 66,
+    "before": {
+      "tp": 25,
+      "fp": 18,
+      "fn": 9,
+      "tn": 14,
+      "precision": 0.5813953488372093,
+      "recall": 0.7352941176470589
+    },
+    "after": {
+      "tp": 15,
+      "fp": 1,
+      "fn": 19,
+      "tn": 31,
+      "precision": 0.9375,
+      "recall": 0.4411764705882353
+    },
+    "events": [
+      {
+        "event": "20260319_CrosleyFire_hp-w-mobo-c",
+        "before": {
+          "tp": 8,
+          "fp": 8,
+          "fn": 0,
+          "tn": 0,
+          "precision": 0.5,
+          "recall": 1.0
+        },
+        "after": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 8,
+          "tn": 8,
+          "precision": null,
+          "recall": 0.0
+        }
+      },
+      {
+        "event": "20260519_TusilFire_mlo-s-mobo-c",
+        "before": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 8,
+          "tn": 8,
+          "precision": 1.0,
+          "recall": 0.1111111111111111
+        },
+        "after": {
+          "tp": 9,
+          "fp": 1,
+          "fn": 0,
+          "tn": 7,
+          "precision": 0.9,
+          "recall": 1.0
+        }
+      },
+      {
+        "event": "20260629_JunctionFire_bm-e-mobo-c",
+        "before": {
+          "tp": 9,
+          "fp": 8,
+          "fn": 0,
+          "tn": 0,
+          "precision": 0.5294117647058824,
+          "recall": 1.0
+        },
+        "after": {
+          "tp": 6,
+          "fp": 0,
+          "fn": 3,
+          "tn": 8,
+          "precision": 1.0,
+          "recall": 0.6666666666666666
+        }
+      },
+      {
+        "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+        "before": {
+          "tp": 7,
+          "fp": 2,
+          "fn": 1,
+          "tn": 6,
+          "precision": 0.7777777777777778,
+          "recall": 0.875
+        },
+        "after": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 8,
+          "tn": 8,
+          "precision": null,
+          "recall": 0.0
+        }
+      }
+    ]
+  },
+  "continuous_video": {
+    "negative_hours": 0.10214844474103733,
+    "before_false_alerts": 3,
+    "after_false_alerts": 0,
+    "before_false_alerts_per_hour": 29.36902277470284,
+    "after_false_alerts_per_hour": 0.0,
+    "after_zero_alert_one_sided_95pct_poisson_upper_per_hour": 29.327243122973158,
+    "positive_clips": 2,
+    "positive_clips_alerted": 0
+  },
+  "throughput_fps": {
+    "before": 8.434987698176199,
+    "after": 2.1889482123016095
+  },
+  "device": "ONNX Runtime CPU",
+  "limitations": [
+    "Archive frames are minute-cadence camera imagery; no continuous false-alert rate is inferred from them.",
+    "Continuous FURG clips predate model training; their membership in upstream training data is unknown.",
+    "The fixed model predates all selected HPWREN holdout events; no tuning on holdout scores is permitted.",
+    "Smoke-only object detector; a smokeless flame may be missed. No operational acceptance is inferred."
+  ],
+  "archive_samples": [
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773942574_-02344.jpg",
+      "label": 0,
+      "offset_seconds": -2344,
+      "sha256": "c28274bfe97d934f36ead0bc55f09ba7178b8618d34071f8dfe10453dfbb5a90",
+      "before_score": 0.8479094505310059,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773942874_-02044.jpg",
+      "label": 0,
+      "offset_seconds": -2044,
+      "sha256": "3cb21f23defb8a55a1ba0cb865f3c2ec6140d4b9dd87ba2743ae05605d5ced5f",
+      "before_score": 0.8677597045898438,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773943173_-01745.jpg",
+      "label": 0,
+      "offset_seconds": -1745,
+      "sha256": "f049ac5520cb4abc5fdcdde3e9c5266e7c8ab76b350ca2452903c63c1c64ffc8",
+      "before_score": 0.8766661286354065,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773943473_-01445.jpg",
+      "label": 0,
+      "offset_seconds": -1445,
+      "sha256": "caebe194134a836fe7786ad0779607a5e7c6e4283be9e72a236a846526e3fc58",
+      "before_score": 0.8714501857757568,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773943774_-01144.jpg",
+      "label": 0,
+      "offset_seconds": -1144,
+      "sha256": "2c1caf2436ff98a42c0b20f8ae77a6bb94894ccc5d85dd97269888b8d21b7f63",
+      "before_score": 0.8773049116134644,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773944074_-00844.jpg",
+      "label": 0,
+      "offset_seconds": -844,
+      "sha256": "097a9524819334fe8f553c9752cb1a519ffc3daacfb7d9ba0c5cdb142ec532c8",
+      "before_score": 0.8738910555839539,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773944373_-00545.jpg",
+      "label": 0,
+      "offset_seconds": -545,
+      "sha256": "a0613afdc5476dfba8428cea2f36e5f6ea955139f5bc7347ef83849e4e3493b4",
+      "before_score": 0.8878382444381714,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773944673_-00245.jpg",
+      "label": 0,
+      "offset_seconds": -245,
+      "sha256": "4b13472f0caa29793261fb007c483a4dd15261c0fcd237de32717855fdbf99f4",
+      "before_score": 0.9049499034881592,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773944974_%2B00056.jpg",
+      "label": 1,
+      "offset_seconds": 56,
+      "sha256": "c78830323fb2589d6b63c0db4666abb3d586bfd7e35aecd7d641bb1bcd389e4c",
+      "before_score": 0.9190656542778015,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773945273_%2B00355.jpg",
+      "label": 1,
+      "offset_seconds": 355,
+      "sha256": "8aa454a70facf677360e4068b79c1e390dba4c5cab6ed4300d3801c7c070a963",
+      "before_score": 0.9278063178062439,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773945573_%2B00655.jpg",
+      "label": 1,
+      "offset_seconds": 655,
+      "sha256": "7d673b69447108f905ee1e7c79ba0221a0ce987a70ea9b91f00ba55ecad7134d",
+      "before_score": 0.9274324774742126,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773945873_%2B00955.jpg",
+      "label": 1,
+      "offset_seconds": 955,
+      "sha256": "ab188ac0513eea6746040e50388fe652409aaaaebac22cb44e02d13380c5a21d",
+      "before_score": 0.9354680776596069,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773946174_%2B01256.jpg",
+      "label": 1,
+      "offset_seconds": 1256,
+      "sha256": "8af77879c28e969dcbb17c5906559e349e660f1ce7cd20686f21ab03dbf8d757",
+      "before_score": 0.9433079957962036,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773946473_%2B01555.jpg",
+      "label": 1,
+      "offset_seconds": 1555,
+      "sha256": "98da2bd877f588c2645c9da70e67aba288b7ad45c4d82cd5e2cc879ee8a76e7d",
+      "before_score": 0.9413772821426392,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773946774_%2B01856.jpg",
+      "label": 1,
+      "offset_seconds": 1856,
+      "sha256": "21b9e09ef1f41efcaf054d4cac1aa0c0323a00f301c16838f4285f2abfc547e3",
+      "before_score": 0.947579026222229,
+      "after_score": 0.37653928995132446,
+      "before": true,
+      "after": false,
+      "regions": [
+        {
+          "box": [
+            0.7945219278335571,
+            0.5428443849086761,
+            0.8104026317596436,
+            0.5619615614414215
+          ],
+          "score": 0.37653928995132446,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260319_CrosleyFire_hp-w-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260319_CrosleyFire_hp-w-mobo-c/1773947074_%2B02156.jpg",
+      "label": 1,
+      "offset_seconds": 2156,
+      "sha256": "004c45d3203c4a01745a42d4c98b2cc8e2cb0f749e4dbcf5acbef839f0358f22",
+      "before_score": 0.9462261199951172,
+      "after_score": 0.4928891658782959,
+      "before": true,
+      "after": false,
+      "regions": [
+        {
+          "box": [
+            0.7739226818084717,
+            0.4861770570278168,
+            0.7908567190170288,
+            0.4987888038158417
+          ],
+          "score": 0.4928891658782959,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.7887642979621887,
+            0.5416905358433723,
+            0.8118926882743835,
+            0.5618841275572777
+          ],
+          "score": 0.2923153042793274,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779218088_-02400.jpg",
+      "label": 0,
+      "offset_seconds": -2400,
+      "sha256": "3cde717f3bb4088d735ef93ac74a9e1d526d265a9d730261eef99b5df6592385",
+      "before_score": 0.17108245193958282,
+      "after_score": 0.5890821218490601,
+      "before": false,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.9694857597351074,
+            0.5000789016485214,
+            0.9946929216384888,
+            0.5284040570259094
+          ],
+          "score": 0.5890821218490601,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.9728198846181234,
+            0.4484412968158722,
+            1.0,
+            0.5275526642799377
+          ],
+          "score": 0.2532181143760681,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779218389_-02099.jpg",
+      "label": 0,
+      "offset_seconds": -2099,
+      "sha256": "7423b22024517e15cb9dc2b665f0e6bbf21d1b80db440ae0cce0b8a0d1d6d643",
+      "before_score": 0.11462607979774475,
+      "after_score": 0.38954848051071167,
+      "before": false,
+      "after": false,
+      "regions": [
+        {
+          "box": [
+            0.9691571394602457,
+            0.5119365751743317,
+            0.9941453138987223,
+            0.5293298065662384
+          ],
+          "score": 0.38954848051071167,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.9715003967285156,
+            0.4431362450122833,
+            1.0,
+            0.5289162993431091
+          ],
+          "score": 0.2734169363975525,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779218688_-01800.jpg",
+      "label": 0,
+      "offset_seconds": -1800,
+      "sha256": "c422b39ddc90de6dd206fc30791f448f94b604a2c7ae182cef2dfded42e0161b",
+      "before_score": 0.1500796675682068,
+      "after_score": 0.3813525438308716,
+      "before": false,
+      "after": false,
+      "regions": [
+        {
+          "box": [
+            0.9667749404907227,
+            0.5059129744768143,
+            0.9964410861333212,
+            0.5290190875530243
+          ],
+          "score": 0.3813525438308716,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.9682008028030396,
+            0.5112019181251526,
+            0.9818599224090576,
+            0.5280953645706177
+          ],
+          "score": 0.32602620124816895,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779218988_-01500.jpg",
+      "label": 0,
+      "offset_seconds": -1500,
+      "sha256": "3e399fc3b9f90a0b2cdf34ac32bd88d344e590f811dd6b3898cc65c8a4d6151e",
+      "before_score": 0.19277703762054443,
+      "after_score": 0.4532455503940582,
+      "before": false,
+      "after": false,
+      "regions": [
+        {
+          "box": [
+            0.9681287606557211,
+            0.5108834803104401,
+            0.9955689907073975,
+            0.5292761027812958
+          ],
+          "score": 0.4532455503940582,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779219288_-01200.jpg",
+      "label": 0,
+      "offset_seconds": -1200,
+      "sha256": "7175acc52073dd4253dc9fb224e3af6030de3f4dd1ce1d93722d7ba75af38832",
+      "before_score": 0.1948869526386261,
+      "after_score": 0.40663599967956543,
+      "before": false,
+      "after": false,
+      "regions": [
+        {
+          "box": [
+            0.9680354992548624,
+            0.5112825036048889,
+            0.9838686386744181,
+            0.5284339785575867
+          ],
+          "score": 0.40663599967956543,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.9690239429473877,
+            0.5109451711177826,
+            0.998705784479777,
+            0.5296050310134888
+          ],
+          "score": 0.372883141040802,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.3040381073951721,
+            0.49702218174934387,
+            0.3195776343345642,
+            0.514346718788147
+          ],
+          "score": 0.257171630859375,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.7184593677520752,
+            0.41332685947418213,
+            0.7472115755081177,
+            0.4257059693336487
+          ],
+          "score": 0.2516615390777588,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779219588_-00900.jpg",
+      "label": 0,
+      "offset_seconds": -900,
+      "sha256": "8a4611e0d08a56f16bc055089cb84ffe666b4610d4a568ff297fbef86b9c5b64",
+      "before_score": 0.11602428555488586,
+      "after_score": 0.4639967381954193,
+      "before": false,
+      "after": false,
+      "regions": [
+        {
+          "box": [
+            0.9680798451105753,
+            0.5114552974700928,
+            0.9857982794443766,
+            0.5287526845932007
+          ],
+          "score": 0.4639967381954193,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779219888_-00600.jpg",
+      "label": 0,
+      "offset_seconds": -600,
+      "sha256": "c4beaeb34cc92f1c5e4ae260d70e3d7242d02e986236d9703900bc21751f784b",
+      "before_score": 0.07890640199184418,
+      "after_score": 0.45363694429397583,
+      "before": false,
+      "after": false,
+      "regions": [
+        {
+          "box": [
+            0.9665695826212565,
+            0.5082978159189224,
+            0.9944679737091064,
+            0.5288209170103073
+          ],
+          "score": 0.45363694429397583,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.9681483109792074,
+            0.47223472595214844,
+            0.999794085820516,
+            0.5284581184387207
+          ],
+          "score": 0.2616289258003235,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779220188_-00300.jpg",
+      "label": 0,
+      "offset_seconds": -300,
+      "sha256": "b7df17619cdee7691fad336d09cdcf86c3fbe818f068dd3563d8fafb5967dc7a",
+      "before_score": 0.04992340877652168,
+      "after_score": 0.3547830581665039,
+      "before": false,
+      "after": false,
+      "regions": [
+        {
+          "box": [
+            0.9678407510121664,
+            0.511974960565567,
+            0.9883046944936117,
+            0.528243362903595
+          ],
+          "score": 0.3547830581665039,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779220488_%2B00000.jpg",
+      "label": 1,
+      "offset_seconds": 0,
+      "sha256": "80ef6757ebc86b1d8159283868c92ffa8c1ea9e08355a7a579022dec514e6e85",
+      "before_score": 0.07880907505750656,
+      "after_score": 0.5515501499176025,
+      "before": false,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.9672302405039469,
+            0.51118403673172,
+            0.9913134972254435,
+            0.5290448665618896
+          ],
+          "score": 0.5515501499176025,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779220788_%2B00300.jpg",
+      "label": 1,
+      "offset_seconds": 300,
+      "sha256": "78e0d91ac523860bbdba136198a39678621eaed6b4d80323305c0c9bd4dffb5a",
+      "before_score": 0.06800518929958344,
+      "after_score": 0.723840594291687,
+      "before": false,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.4729808568954468,
+            0.5192669630050659,
+            0.49987908204396564,
+            0.5374614596366882
+          ],
+          "score": 0.723840594291687,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.4741995731989543,
+            0.5128551721572876,
+            0.5332577625910441,
+            0.5387881994247437
+          ],
+          "score": 0.6736952066421509,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.9661548535029093,
+            0.5106871277093887,
+            0.9865554968516032,
+            0.5284078121185303
+          ],
+          "score": 0.5430495142936707,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779221088_%2B00600.jpg",
+      "label": 1,
+      "offset_seconds": 600,
+      "sha256": "f3b189ebdbfc2a6b3b85ed2a8540f0d5df58b57201a03a59349a4bcd3e70a921",
+      "before_score": 0.08771616220474243,
+      "after_score": 0.7607978582382202,
+      "before": false,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.47155741850535077,
+            0.5203536637127399,
+            0.49996523062388104,
+            0.537944171577692
+          ],
+          "score": 0.7607978582382202,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.4721635580062866,
+            0.5113488435745239,
+            0.5668997764587402,
+            0.5390392541885376
+          ],
+          "score": 0.5649939179420471,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.9650312662124634,
+            0.5106866657733917,
+            0.9928215742111206,
+            0.5294605195522308
+          ],
+          "score": 0.4983408451080322,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.5,
+            0.5135304480791092,
+            0.5366726443171501,
+            0.5383988618850708
+          ],
+          "score": 0.2957206964492798,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779221388_%2B00900.jpg",
+      "label": 1,
+      "offset_seconds": 900,
+      "sha256": "0ac7b8f7b8dd2a982f5a0367b7494c0ce30f03337825d00af219cc0bae8b022d",
+      "before_score": 0.08782626688480377,
+      "after_score": 0.7552169561386108,
+      "before": false,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.47002989053726196,
+            0.5121759213507175,
+            0.5156389474868774,
+            0.5370400436222553
+          ],
+          "score": 0.7552169561386108,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.9656793673833212,
+            0.5108134262263775,
+            0.9837543964385986,
+            0.5282152406871319
+          ],
+          "score": 0.5266549587249756,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.4704386393229167,
+            0.5087301731109619,
+            0.5966256062189738,
+            0.5379478335380554
+          ],
+          "score": 0.3307955861091614,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779221688_%2B01200.jpg",
+      "label": 1,
+      "offset_seconds": 1200,
+      "sha256": "89ccf579ba92c5bf1e28d23ce2e8f5e1822938e088e18ac76ffe52c9004e35d3",
+      "before_score": 0.13356971740722656,
+      "after_score": 0.8149946928024292,
+      "before": false,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.47241342067718506,
+            0.5115692168474197,
+            0.5331015586853027,
+            0.5380406752228737
+          ],
+          "score": 0.8149946928024292,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.4709479808807373,
+            0.5101497806608677,
+            0.4999748468399048,
+            0.5376898758113384
+          ],
+          "score": 0.7484664916992188,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.9648988644282023,
+            0.5105977654457092,
+            0.9872759977976481,
+            0.5283983796834946
+          ],
+          "score": 0.5030812621116638,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779221988_%2B01500.jpg",
+      "label": 1,
+      "offset_seconds": 1500,
+      "sha256": "c7dc9f0f9ac7ec7a960e201a1e8ef583033ab7d8850c26ab19f0a134162acc39",
+      "before_score": 0.11251579970121384,
+      "after_score": 0.7704899311065674,
+      "before": false,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.47131049633026123,
+            0.5128051340579987,
+            0.5,
+            0.5390790924429893
+          ],
+          "score": 0.7704899311065674,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.47163023551305133,
+            0.5009500831365585,
+            0.5295657714207967,
+            0.5382924452424049
+          ],
+          "score": 0.4807831645011902,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.9646860361099243,
+            0.5104697942733765,
+            0.9962928295135498,
+            0.5298264026641846
+          ],
+          "score": 0.35004138946533203,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.5003492683172226,
+            0.48675215244293213,
+            0.5572275072336197,
+            0.5346319079399109
+          ],
+          "score": 0.3114699423313141,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779222288_%2B01800.jpg",
+      "label": 1,
+      "offset_seconds": 1800,
+      "sha256": "642c3efcd48eb2cd1d5fe6fc363058a17d339f04947cd3baebd4c5acc04168c7",
+      "before_score": 0.40093064308166504,
+      "after_score": 0.8020509481430054,
+      "before": false,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.5,
+            0.4957551658153534,
+            0.5381102189421654,
+            0.5378598570823669
+          ],
+          "score": 0.8020509481430054,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.47155511379241943,
+            0.5111259929835796,
+            0.5,
+            0.5380108244717121
+          ],
+          "score": 0.7918286323547363,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.9648280541102091,
+            0.5109668672084808,
+            0.98975670337677,
+            0.5297512710094452
+          ],
+          "score": 0.4749296307563782,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779222589_%2B02101.jpg",
+      "label": 1,
+      "offset_seconds": 2101,
+      "sha256": "8e4c4a0d32a39b1607153ac2dff902181608ceeb6f3151a2337d021bd730a146",
+      "before_score": 0.6255545616149902,
+      "after_score": 0.653164803981781,
+      "before": false,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.4786573648452759,
+            0.4626978635787964,
+            0.5673785209655762,
+            0.5378923416137695
+          ],
+          "score": 0.653164803981781,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.9661258459091187,
+            0.5112863183021545,
+            0.9832335710525513,
+            0.5288370847702026
+          ],
+          "score": 0.642566978931427,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.47858643531799316,
+            0.502389132976532,
+            0.5400701761245728,
+            0.5382004007697105
+          ],
+          "score": 0.4965047240257263,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.47725653648376465,
+            0.5159888863563538,
+            0.5,
+            0.5384994149208069
+          ],
+          "score": 0.4863491654396057,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260519_TusilFire_mlo-s-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260519_TusilFire_mlo-s-mobo-c/1779222888_%2B02400.jpg",
+      "label": 1,
+      "offset_seconds": 2400,
+      "sha256": "470452235f3156ed04f113d19ffae812d4e873494a1f93a215b62fd5c3298099",
+      "before_score": 0.7171847820281982,
+      "after_score": 0.7898225784301758,
+      "before": true,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.47173049052556354,
+            0.5086117014288902,
+            0.529454787572225,
+            0.5386572703719139
+          ],
+          "score": 0.7898225784301758,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.470786174138387,
+            0.5113647878170013,
+            0.4999762376149495,
+            0.5383427143096924
+          ],
+          "score": 0.6387915015220642,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.96531081199646,
+            0.5103711411356926,
+            0.9866204261779785,
+            0.5283843651413918
+          ],
+          "score": 0.525350034236908,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.5,
+            0.503508985042572,
+            0.5463013052940369,
+            0.538066029548645
+          ],
+          "score": 0.43319183588027954,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782775814_-02400.jpg",
+      "label": 0,
+      "offset_seconds": -2400,
+      "sha256": "3cebbfab5aa9e7a325aa1e33d5a8300f288b4dfb17ee7e32ea85a441bb246480",
+      "before_score": 0.897504448890686,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782776115_-02099.jpg",
+      "label": 0,
+      "offset_seconds": -2099,
+      "sha256": "30670e3c6e91e92ac8ff8c5c9fe01e6d64dc4cf31486a8ad0490dc4f1d8fea8b",
+      "before_score": 0.8778908848762512,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782776414_-01800.jpg",
+      "label": 0,
+      "offset_seconds": -1800,
+      "sha256": "6b172b9cba4f079cf28ae48cda25b31b255999ec3f6eb2fec7ca8a3aadbf6a42",
+      "before_score": 0.8638318181037903,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782776714_-01500.jpg",
+      "label": 0,
+      "offset_seconds": -1500,
+      "sha256": "361955ddcf877b8a99fb20ad2082b2ba5d7ef461a76cbc59ca51c3751a8e507f",
+      "before_score": 0.8806058168411255,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782777014_-01200.jpg",
+      "label": 0,
+      "offset_seconds": -1200,
+      "sha256": "0376d5228a799035e80dc2995f6e3b970e800ff514c3b678808d180bad2ff830",
+      "before_score": 0.9117177128791809,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782777314_-00900.jpg",
+      "label": 0,
+      "offset_seconds": -900,
+      "sha256": "7eeb2e50300b13a1d306451d5faac752da25d85cfd40d2ec6b836b5b3158b8eb",
+      "before_score": 0.8782304525375366,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782777614_-00600.jpg",
+      "label": 0,
+      "offset_seconds": -600,
+      "sha256": "36b768c7f7acd0e08ff7beefe087935dba93a90c7b326a8488e1bb0d846a3d58",
+      "before_score": 0.8082078695297241,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782777915_-00299.jpg",
+      "label": 0,
+      "offset_seconds": -299,
+      "sha256": "967f0204c59f50a646fa129f20d38c2554ce29e053160eaba47f76f549970e6d",
+      "before_score": 0.7884318232536316,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782778214_%2B00000.jpg",
+      "label": 1,
+      "offset_seconds": 0,
+      "sha256": "2574910eb557120a7d9f464717c51bc010470100343d0a3cfa2aa742369d798d",
+      "before_score": 0.7909594774246216,
+      "after_score": 0.3157743215560913,
+      "before": true,
+      "after": false,
+      "regions": [
+        {
+          "box": [
+            0.32214048504829407,
+            0.5053758025169373,
+            0.33170342445373535,
+            0.5146194100379944
+          ],
+          "score": 0.3157743215560913,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782778514_%2B00300.jpg",
+      "label": 1,
+      "offset_seconds": 300,
+      "sha256": "aabfe1edfe9b215463cc141056d38c4bc9b4e67a41cb554d7363e3b9dec42243",
+      "before_score": 0.7527086138725281,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782778815_%2B00601.jpg",
+      "label": 1,
+      "offset_seconds": 601,
+      "sha256": "abde537e17aa8a4621768829e31e8607f890eb2ef281720449c7cd9e8c73fe7f",
+      "before_score": 0.8258376717567444,
+      "after_score": 0.5237624049186707,
+      "before": true,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.3015285134315491,
+            0.49081316590309143,
+            0.32652920484542847,
+            0.5162197351455688
+          ],
+          "score": 0.5237624049186707,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782779114_%2B00900.jpg",
+      "label": 1,
+      "offset_seconds": 900,
+      "sha256": "881f82477c7044250f17cff6ea86edf2605a8084630beb82bb3b04ce53faa61d",
+      "before_score": 0.9870176911354065,
+      "after_score": 0.725555419921875,
+      "before": true,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.2738257646560669,
+            0.4675660878419876,
+            0.3270752429962158,
+            0.5132042169570923
+          ],
+          "score": 0.725555419921875,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782779414_%2B01200.jpg",
+      "label": 1,
+      "offset_seconds": 1200,
+      "sha256": "805c9603bdd154c52f9826211f9b10c6ce48b3189b9f16ace7d382d18941b1d4",
+      "before_score": 0.9756364226341248,
+      "after_score": 0.8133784532546997,
+      "before": true,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.23609515031178793,
+            0.4576288163661957,
+            0.32531364758809406,
+            0.5189454555511475
+          ],
+          "score": 0.8133784532546997,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782779714_%2B01500.jpg",
+      "label": 1,
+      "offset_seconds": 1500,
+      "sha256": "29451bf440a63a744831906a391f88c93a9d1963d97b40e6094502c7dbc26211",
+      "before_score": 0.8992501497268677,
+      "after_score": 0.5884815454483032,
+      "before": true,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.21550410985946655,
+            0.467213898897171,
+            0.32808583974838257,
+            0.5191522836685181
+          ],
+          "score": 0.5884815454483032,
+          "label": "smoke"
+        },
+        {
+          "box": [
+            0.2717052400112152,
+            0.4670112133026123,
+            0.32228777309258777,
+            0.5
+          ],
+          "score": 0.32682448625564575,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782780015_%2B01801.jpg",
+      "label": 1,
+      "offset_seconds": 1801,
+      "sha256": "7f570dfd30e214eb3b27eb26fccbec63df1229816eee06328ff163da06777166",
+      "before_score": 0.8923570513725281,
+      "after_score": 0.5979146957397461,
+      "before": true,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.2026906212170919,
+            0.47561582922935486,
+            0.3309309085210164,
+            0.5208587646484375
+          ],
+          "score": 0.5979146957397461,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782780314_%2B02100.jpg",
+      "label": 1,
+      "offset_seconds": 2100,
+      "sha256": "f747c8136e612905fba0212a48d499a23372fe3d7c313ff170adee20128afa54",
+      "before_score": 0.8278522491455078,
+      "after_score": 0.6831438541412354,
+      "before": true,
+      "after": true,
+      "regions": [
+        {
+          "box": [
+            0.20487046241760254,
+            0.4783506989479065,
+            0.3430236577987671,
+            0.5207149982452393
+          ],
+          "score": 0.6831438541412354,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260629_JunctionFire_bm-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260629_JunctionFire_bm-e-mobo-c/1782780614_%2B02400.jpg",
+      "label": 1,
+      "offset_seconds": 2400,
+      "sha256": "2fe45c514bc901f6d776c5b526f6efd29b9b6dde86c0b97f7582d57a98a59eee",
+      "before_score": 0.7602437138557434,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786909693_-02340.jpg",
+      "label": 0,
+      "offset_seconds": -2340,
+      "sha256": "7796c48efbc24afbc148737d0f55de18c538698fc6ca4fb6b9e3a019a088fe2a",
+      "before_score": 0.6388052701950073,
+      "after_score": 0.0,
+      "before": false,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786909991_-02042.jpg",
+      "label": 0,
+      "offset_seconds": -2042,
+      "sha256": "e9d4ccfb0a86caf9e6d236467b94ce3d439cf4bac165d83b509cb66d496257f9",
+      "before_score": 0.38015609979629517,
+      "after_score": 0.0,
+      "before": false,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786910294_-01739.jpg",
+      "label": 0,
+      "offset_seconds": -1739,
+      "sha256": "e1c4cd29c432ce4cfb675ba4045587ddca3069e6a83eeb2ea667704bd88325ea",
+      "before_score": 0.2477482706308365,
+      "after_score": 0.0,
+      "before": false,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786910592_-01441.jpg",
+      "label": 0,
+      "offset_seconds": -1441,
+      "sha256": "cd609346c37b8cfa2dd915854912ec00be98e523840e7b071373bced6cbd0864",
+      "before_score": 0.5222492218017578,
+      "after_score": 0.0,
+      "before": false,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786910893_-01140.jpg",
+      "label": 0,
+      "offset_seconds": -1140,
+      "sha256": "e384d87297d2181edc0ef6e29126fbc8be7a10124b829daf286e3607a742f37f",
+      "before_score": 0.5945598483085632,
+      "after_score": 0.0,
+      "before": false,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786911192_-00841.jpg",
+      "label": 0,
+      "offset_seconds": -841,
+      "sha256": "6ba4f48a8aed4feb1070b9cbc5f1188e5ebb480601f56f6ba3eca0196b694553",
+      "before_score": 0.5016350746154785,
+      "after_score": 0.0,
+      "before": false,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786911493_-00540.jpg",
+      "label": 0,
+      "offset_seconds": -540,
+      "sha256": "07cff617e2860e0e8a870b21a5d2ab930079038bfed7e3ec6d305761d43a591a",
+      "before_score": 0.749972403049469,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786911792_-00241.jpg",
+      "label": 0,
+      "offset_seconds": -241,
+      "sha256": "bae515bf50a7e1b656ae861e31c09befe707a93dd680cd97d789f187e19cb156",
+      "before_score": 0.7855549454689026,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786912093_%2B00060.jpg",
+      "label": 1,
+      "offset_seconds": 60,
+      "sha256": "4db32a4c08d6af114607f2cfb0073d7ff3abf2a1a7b91d4a6b69ef26dd0ee6e7",
+      "before_score": 0.8805163502693176,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786912393_%2B00360.jpg",
+      "label": 1,
+      "offset_seconds": 360,
+      "sha256": "c1d7aa58209bbf4308546ce9259de4fa10d7cd77f6aed7fc83f33b939b852194",
+      "before_score": 0.7310953140258789,
+      "after_score": 0.4020286798477173,
+      "before": true,
+      "after": false,
+      "regions": [
+        {
+          "box": [
+            0.10058194398880005,
+            0.45582887530326843,
+            0.11737334728240967,
+            0.47655729949474335
+          ],
+          "score": 0.4020286798477173,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786912693_%2B00660.jpg",
+      "label": 1,
+      "offset_seconds": 660,
+      "sha256": "845f607fee28a5c9989947e24263792e92b06d42797b9558bd8d6c9ce14ee1d8",
+      "before_score": 0.8202490210533142,
+      "after_score": 0.31107646226882935,
+      "before": true,
+      "after": false,
+      "regions": [
+        {
+          "box": [
+            0.10005779067675273,
+            0.4360726773738861,
+            0.13592923680941263,
+            0.4744994342327118
+          ],
+          "score": 0.31107646226882935,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786912992_%2B00959.jpg",
+      "label": 1,
+      "offset_seconds": 959,
+      "sha256": "ae71a3870e5e87b87c15b19ad0cecefced6e7c49a5719209f05e1c511584264d",
+      "before_score": 0.7406762838363647,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786913293_%2B01260.jpg",
+      "label": 1,
+      "offset_seconds": 1260,
+      "sha256": "687cac6dc725f21811d883904bb6ba71d87718740cedc6e537f3f272eb4b9e0a",
+      "before_score": 0.6995718479156494,
+      "after_score": 0.2706983685493469,
+      "before": false,
+      "after": false,
+      "regions": [
+        {
+          "box": [
+            0.096396803855896,
+            0.4350442886352539,
+            0.1394769549369812,
+            0.47476619482040405
+          ],
+          "score": 0.2706983685493469,
+          "label": "smoke"
+        }
+      ]
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786913591_%2B01558.jpg",
+      "label": 1,
+      "offset_seconds": 1558,
+      "sha256": "bea4c758cf2b70e489e33a34c5a7cdf81b0cd2fb1253caee8c2ec35cbd482321",
+      "before_score": 0.8366032242774963,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786913894_%2B01861.jpg",
+      "label": 1,
+      "offset_seconds": 1861,
+      "sha256": "085376528a2797c7b95c45593cc4f7e9dafd71a04bf6fbb5d1f10068af7d636e",
+      "before_score": 0.8190855979919434,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    },
+    {
+      "event": "20260816_SorrentoFire_sdsc-e-mobo-c",
+      "source": "https://cdn.hpwren.ucsd.edu/HPWREN-FIgLib-Data/20260816_SorrentoFire_sdsc-e-mobo-c/1786914192_%2B02159.jpg",
+      "label": 1,
+      "offset_seconds": 2159,
+      "sha256": "0e391b197754dcfe81545a3956a7e715ddf5a4d237b72914af3c4c42390e74a6",
+      "before_score": 0.8383975028991699,
+      "after_score": 0.0,
+      "before": true,
+      "after": false,
+      "regions": []
+    }
+  ],
+  "video_clips": [
+    {
+      "name": "non_fire_patrolbot_onboard",
+      "fire": false,
+      "source": "https://raw.githubusercontent.com/steffensbola/furg-fire-dataset/6aff09d7baa27425f31d1df685284c26cbffe7af/non_fire_patrolbot_onboard.mp4",
+      "sha256": "b3e59cf1d8f4916727bc459a0b7c09d5ddfde4b8f0440b9586944abfda7d890c",
+      "source_annotated_fire_frames": 0,
+      "duration_seconds": 11.378044711378045,
+      "sampled_frames": 12,
+      "detected_frames": 0,
+      "before_alert_seconds": [
+        2
+      ],
+      "after_alert_seconds": []
+    },
+    {
+      "name": "cleaner",
+      "fire": false,
+      "source": "https://raw.githubusercontent.com/steffensbola/furg-fire-dataset/6aff09d7baa27425f31d1df685284c26cbffe7af/cleaner.mp4",
+      "sha256": "9534a0a4f3564ffbe2ad6166af30591a4364d94880a7de3c09249ad3700dbdb6",
+      "source_annotated_fire_frames": 0,
+      "duration_seconds": 119.51951951951952,
+      "sampled_frames": 120,
+      "detected_frames": 0,
+      "before_alert_seconds": [
+        86
+      ],
+      "after_alert_seconds": []
+    },
+    {
+      "name": "coolerbot",
+      "fire": false,
+      "source": "https://raw.githubusercontent.com/steffensbola/furg-fire-dataset/6aff09d7baa27425f31d1df685284c26cbffe7af/coolerbot.mp4",
+      "sha256": "176008c9764b490c3514acf6773eb18c0dfbd246fcec0f5b8ff43fcc64a845f0",
+      "source_annotated_fire_frames": 0,
+      "duration_seconds": 89.95662328995662,
+      "sampled_frames": 90,
+      "detected_frames": 0,
+      "before_alert_seconds": [],
+      "after_alert_seconds": []
+    },
+    {
+      "name": "rover",
+      "fire": false,
+      "source": "https://raw.githubusercontent.com/steffensbola/furg-fire-dataset/6aff09d7baa27425f31d1df685284c26cbffe7af/rover.mp4",
+      "sha256": "fbe4d8abdc1e3d767980547cdb06c737d7c855dd32239ccb10625369c3e5daeb",
+      "source_annotated_fire_frames": 0,
+      "duration_seconds": 85.08508508508508,
+      "sampled_frames": 86,
+      "detected_frames": 0,
+      "before_alert_seconds": [],
+      "after_alert_seconds": []
+    },
+    {
+      "name": "icra",
+      "fire": false,
+      "source": "https://raw.githubusercontent.com/steffensbola/furg-fire-dataset/6aff09d7baa27425f31d1df685284c26cbffe7af/icra.mp4",
+      "sha256": "9c56dc2bdef6d4f5cc235365c2cb352e9dbc502b374c11877ac582813828968e",
+      "source_annotated_fire_frames": 0,
+      "duration_seconds": 61.79512846179513,
+      "sampled_frames": 62,
+      "detected_frames": 0,
+      "before_alert_seconds": [
+        2
+      ],
+      "after_alert_seconds": []
+    },
+    {
+      "name": "hand_held_camera_wildfire",
+      "fire": true,
+      "source": "https://raw.githubusercontent.com/steffensbola/furg-fire-dataset/6aff09d7baa27425f31d1df685284c26cbffe7af/hand_held_camera_wildfire.mp4",
+      "sha256": "1af9a1d4dd42244f8905e5c164088d1fee387a65a401967addad46785d9a4b3b",
+      "source_annotated_fire_frames": 735,
+      "duration_seconds": 25.792459125792462,
+      "sampled_frames": 26,
+      "detected_frames": 0,
+      "before_alert_seconds": [
+        2
+      ],
+      "after_alert_seconds": []
+    },
+    {
+      "name": "hand_held_batteries_night",
+      "fire": true,
+      "source": "https://raw.githubusercontent.com/steffensbola/furg-fire-dataset/6aff09d7baa27425f31d1df685284c26cbffe7af/hand_held_batteries_night.mp4",
+      "sha256": "6176a6ae902d83305b3c8941f3ffe63bb61956fb4d3a541d96d1a700df922091",
+      "source_annotated_fire_frames": 616,
+      "duration_seconds": 20.52052052052052,
+      "sampled_frames": 21,
+      "detected_frames": 3,
+      "before_alert_seconds": [
+        2
+      ],
+      "after_alert_seconds": []
+    }
+  ],
+  "credits": [
+    "HPWREN / UCSD https://www.hpwren.ucsd.edu/FIgLib/",
+    "Steffens et al. FURG Fire Dataset https://github.com/steffensbola/furg-fire-dataset"
+  ]
+}
