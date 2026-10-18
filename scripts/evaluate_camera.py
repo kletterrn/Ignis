@@ -12,7 +12,32 @@ from urllib.parse import quote,unquote
 import cv2
 import httpx
 from PIL import Image
-from services.camera import Classifier,SmokeDetector,TemporalGate,DETECTION_THRESHOLD,DETECTOR_SHA256
+from services.camera import Classifier,SmokeDetector,DETECTION_THRESHOLD,DETECTOR_SHA256,overlap
+
+class TemporalGate:
+    """Five spatially consistent samples; one review alert until 30 clear seconds."""
+    def __init__(self):
+        self.box=None;self.hits=0;self.first=None;self.previous=None
+        self.latched=False;self.last_positive=None
+
+    def update(self,second,regions):
+        if self.previous is not None and (second<=self.previous or second-self.previous>6):
+            self.hits=0;self.box=None;self.first=None
+        self.previous=second
+        candidates=[p for p in regions if p['score']>=DETECTION_THRESHOLD]
+        if not candidates:
+            self.hits=0;self.box=None;self.first=None
+            if self.last_positive is not None and second-self.last_positive>=30:self.latched=False
+            return None
+        matched=[p for p in candidates if self.box is not None and overlap(self.box,p['box'])>=.1]
+        item=max(matched or candidates,key=lambda p:p['score'])
+        if not matched:self.hits=0;self.first=second
+        self.hits+=1;self.box=item['box'];self.last_positive=second
+        if self.hits>=5 and second-self.first>=4 and not self.latched:
+            self.latched=True
+            return item
+        return None
+
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -43,7 +68,7 @@ def fetch(protocol,root):
         for item in protocol['continuous_video']:
             name=item['name'];base=f"https://raw.githubusercontent.com/steffensbola/furg-fire-dataset/{protocol['video_revision']}/"
             path=root/'furg'/(name+'.mp4');sha=download(client,base+name+'.mp4',path)
-            xml=path.with_suffix('.xml');download(client,base+name+'.xml',xml)
+            xml=path.with_suffix('.xml');download(client,base+item.get('annotation_name',name+'.xml'),xml)
             annotations=ET.parse(xml).findall('./frames/_')
             fire_frames=sum(bool(frame.find('annotations').findall('_')) for frame in annotations)
             if bool(fire_frames)!=item['fire']:raise ValueError('Video label disagrees with source annotation')

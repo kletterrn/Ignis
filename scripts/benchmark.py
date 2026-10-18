@@ -2,13 +2,13 @@
 import argparse,csv,json,time
 from pathlib import Path
 from PIL import Image
-from services.camera import Classifier,SmokeDetector,DETECTION_THRESHOLD
+from services.camera import Classifier,CameraDetector,DETECTION_THRESHOLD
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('manifest');parser.add_argument('--output',default='outputs/camera-benchmark.json');parser.add_argument('--legacy',action='store_true');args=parser.parse_args()
     rows=list(csv.DictReader(Path(args.manifest).open(encoding='utf-8')))
     if not rows or any(r['label'] not in ('0','1') for r in rows):raise ValueError('Labeled images required')
-    model=Classifier() if args.legacy else SmokeDetector();threshold=.7 if args.legacy else DETECTION_THRESHOLD;results=[];start=time.perf_counter()
+    model=Classifier() if args.legacy else CameraDetector();threshold=.7 if args.legacy else DETECTION_THRESHOLD;results=[];start=time.perf_counter()
     for row in rows:
         with Image.open(row['path']) as image:score=model.score(image)
         results.append({**row,'score':score,'prediction':int(score>=threshold)})

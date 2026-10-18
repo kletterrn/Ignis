@@ -50,3 +50,27 @@ def test_corrupt_detector_is_rejected_before_loading(tmp_path):
     from services.camera import SmokeDetector
     (tmp_path/'yolov11s-20250722.onnx').write_bytes(b'bad checkpoint')
     with pytest.raises(ValueError,match='checksum'):SmokeDetector(tmp_path)
+
+
+def test_confirmation_tolerates_short_misses_but_never_combines_classes():
+    pytest.importorskip('cv2')
+    from services.camera import TemporalGate
+    gate=TemporalGate()
+    for t in range(7):assert gate.update(t,[region()] if t in (0,2,3,5) else []) is None
+    assert gate.update(7,[region()])
+    gate=TemporalGate()
+    for t in range(8):
+        assert gate.update(t,[{**region(),'label':'fire' if t%2 else 'smoke'}]) is None
+
+
+def test_flame_decoder_uses_rgb_and_keeps_classes_separate():
+    pytest.importorskip('cv2')
+    from services.camera import FlameDetector
+    detector=FlameDetector.__new__(FlameDetector);detector.input='images'
+    output=np.zeros((1,6,2100),dtype='float32');output[0,:,0]=[160,160,80,80,.6,.1];output[0,:,1]=[160,160,80,80,.1,.9]
+    class FakeNet:
+        def run(self,_,feed):
+            assert feed['images'].shape==(1,3,320,320)
+            return [output]
+    detector.net=FakeNet();result=detector.detect(Image.new('RGB',(320,320),'red'))
+    assert len(result)==1 and result[0]['label']=='fire' and result[0]['score']==pytest.approx(.6)

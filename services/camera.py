@@ -2,6 +2,7 @@ import hashlib
 import queue
 import threading
 import time
+from collections import deque
 from pathlib import Path
 from uuid import uuid4
 
@@ -56,6 +57,9 @@ class SmokeDetector:
     """Official fixed-shape ONNX smoke detector; scores are not probabilities."""
     name='Pyronear YOLO11s 2025-07-22'
     device='ONNX Runtime CPU'
+    size=1024
+    labels=('smoke',)
+    minimum_score=.25
 
     def __init__(self,root='data/models'):
         import onnxruntime as ort
@@ -86,26 +90,65 @@ class SmokeDetector:
 
     def _detect(self,image):
         image=image.convert('RGB');w,h=image.size
-        ratio=min(1024/w,1024/h);rw,rh=round(w*ratio),round(h*ratio)
-        xpad,ypad=(1024-rw)//2,(1024-rh)//2
-        canvas=np.full((1024,1024,3),114,dtype='uint8')
+        ratio=min(self.size/w,self.size/h);rw,rh=round(w*ratio),round(h*ratio)
+        xpad,ypad=(self.size-rw)//2,(self.size-rh)//2
+        canvas=np.full((self.size,self.size,3),114,dtype='uint8')
         canvas[ypad:ypad+rh,xpad:xpad+rw]=np.asarray(image.resize((rw,rh),Image.Resampling.BILINEAR))
         tensor=canvas.transpose(2,0,1)[None].astype('float32')/255
         output=self.net.run(None,{self.input:tensor})[0]
-        if output.shape!=(1,5,21504) or not np.isfinite(output).all():raise ValueError('Unexpected detector output')
-        boxes=[];scores=[]
-        for cx,cy,bw,bh,score in output[0].T:
-            if score<.25:continue
+        anchors=sum((self.size//s)**2 for s in (8,16,32))
+        if output.shape!=(1,4+len(self.labels),anchors) or not np.isfinite(output).all():raise ValueError('Unexpected detector output')
+        boxes=[];scores=[];classes=[]
+        for row in output[0].T:
+            cx,cy,bw,bh=row[:4];category=int(np.argmax(row[4:]));score=float(row[4+category])
+            if score<self.minimum_score:continue
             x1,y1=max(0,(cx-bw/2-xpad)/ratio),max(0,(cy-bh/2-ypad)/ratio)
             x2,y2=min(w,(cx+bw/2-xpad)/ratio),min(h,(cy+bh/2-ypad)/ratio)
             if x2<=x1 or y2<=y1:continue
-            boxes.append([float(x1),float(y1),float(x2-x1),float(y2-y1)]);scores.append(float(score))
-        keep=cv2.dnn.NMSBoxes(boxes,scores,.25,.45)
+            boxes.append([float(x1),float(y1),float(x2-x1),float(y2-y1)]);scores.append(float(score));classes.append(category)
+        keep=cv2.dnn.NMSBoxesBatched(boxes,scores,classes,self.minimum_score,.45)
         return [{'box':[boxes[i][0]/w,boxes[i][1]/h,(boxes[i][0]+boxes[i][2])/w,(boxes[i][1]+boxes[i][3])/h],
-                 'score':scores[i],'label':'smoke'} for i in np.asarray(keep).reshape(-1)[:20]]
+                 'score':scores[i],'label':self.labels[classes[i]]} for i in np.asarray(keep).reshape(-1)[:20]]
 
     def score(self,image):
         return max((x['score'] for x in self.detect(image)),default=0.)
+
+
+FLAME_URL='https://huggingface.co/fiacecson20/cctv-ai-fire-smoke/resolve/343990e42d99a5d27e9f35fc7c80880dc5f43f45/best.onnx'
+FLAME_SHA256='f2699b753e78be8d392bfa63e64bf102ea3ceb8b6086a59dfd8192b61a0c6fad'
+
+
+class FlameDetector(SmokeDetector):
+    """Independent flame branch; this model's weaker smoke class is not used."""
+    size=320
+    labels=('fire','smoke')
+    minimum_score=.5
+    name='CCTV-AI YOLOv8n flame 2026-05-05'
+
+    def __init__(self,root='data/models'):
+        import onnxruntime as ort
+        path=Path(root)/'fire-smoke-yolov8n.onnx';path.parent.mkdir(parents=True,exist_ok=True)
+        if not path.exists():
+            response=httpx.get(FLAME_URL,follow_redirects=True,timeout=120);response.raise_for_status()
+            if hashlib.sha256(response.content).hexdigest()!=FLAME_SHA256:raise ValueError('Flame detector checksum mismatch')
+            temporary=path.with_suffix('.part');temporary.write_bytes(response.content);temporary.replace(path)
+        if hashlib.sha256(path.read_bytes()).hexdigest()!=FLAME_SHA256:raise ValueError('Flame detector checksum mismatch')
+        options=ort.SessionOptions();options.intra_op_num_threads=4
+        self.net=ort.InferenceSession(str(path),sess_options=options,providers=['CPUExecutionProvider']);self.input=self.net.get_inputs()[0].name
+
+    def detect(self,image):return [p for p in self._detect(image) if p['label']=='fire']
+
+
+class CameraDetector:
+    name='Pyronear smoke 2025-07-22 + CCTV-AI flame 2026-05-05'
+    device='ONNX Runtime CPU'
+
+    def __init__(self,root='data/models'):
+        self.smoke=SmokeDetector(root);self.flame=FlameDetector(root)
+
+    def detect(self,image):return self.smoke.detect(image)+self.flame.detect(image)
+
+    def score(self,image):return max((p['score'] for p in self.detect(image)),default=0.)
 
 
 def overlap(a,b):
@@ -115,27 +158,27 @@ def overlap(a,b):
 
 
 class TemporalGate:
-    """Five spatially consistent samples; one review alert until 30 clear seconds."""
+    """Five of eight spatially consistent samples; one alert until 30 clear seconds."""
     def __init__(self):
-        self.box=None;self.hits=0;self.first=None;self.previous=None
+        self.history=deque(maxlen=8);self.hits=0;self.previous=None
         self.latched=False;self.last_positive=None
 
     def update(self,second,regions):
         if self.previous is not None and (second<=self.previous or second-self.previous>6):
-            self.hits=0;self.box=None;self.first=None
+            self.history.clear()
         self.previous=second
         candidates=[p for p in regions if p['score']>=DETECTION_THRESHOLD]
+        self.history.append((second,candidates));self.hits=0
         if not candidates:
-            self.hits=0;self.box=None;self.first=None
             if self.last_positive is not None and second-self.last_positive>=30:self.latched=False
             return None
-        matched=[p for p in candidates if self.box is not None and overlap(self.box,p['box'])>=.1]
-        item=max(matched or candidates,key=lambda p:p['score'])
-        if not matched:self.hits=0;self.first=second
-        self.hits+=1;self.box=item['box'];self.last_positive=second
-        if self.hits>=5 and second-self.first>=4 and not self.latched:
-            self.latched=True
-            return item
+        self.last_positive=second
+        for item in sorted(candidates,key=lambda p:p['score'],reverse=True):
+            matches=[t for t,items in self.history if 0<=second-t<=8 and any(p.get('label','smoke')==item.get('label','smoke') and overlap(p['box'],item['box'])>=.1 for p in items)]
+            self.hits=max(self.hits,len(matches))
+            if len(matches)>=5 and second-min(matches)>=4 and not self.latched:
+                self.latched=True
+                return item
         return None
 
 class CameraWorker:
@@ -226,7 +269,7 @@ class CameraWorker:
                 if cap is not None: cap.release()
                 capture_done.set()
         try:
-            self.classifier = self.classifier or SmokeDetector()
+            self.classifier = self.classifier or CameraDetector()
             producer=threading.Thread(target=capture,daemon=True);producer.start()
             gate=TemporalGate()
             started=time.perf_counter();initial_frames=job['frames']
@@ -252,7 +295,7 @@ class CameraWorker:
                 if alert:
                     key=hashlib.sha256(f"{job['id']}:{int(second)//60}".encode()).hexdigest()[:32]
                     path=self.root/(key+".jpg");annotated.save(path,quality=90)
-                    self.store.put("evidence",{"id":key,"job_id":job["id"],"observed_at":utcnow(),"acquired_at":job.get("acquired_at"),"offset_seconds":second,"model_score":score,"model":self.classifier.name,"regions":regions,"path":str(path),"review_state":"pending","georeferenced":False,"trigger":"spatial_temporal_smoke"})
+                    self.store.put("evidence",{"id":key,"job_id":job["id"],"observed_at":utcnow(),"acquired_at":job.get("acquired_at"),"offset_seconds":second,"model_score":score,"model":self.classifier.name,"regions":regions,"path":str(path),"review_state":"pending","georeferenced":False,"trigger":"spatial_temporal_"+alert.get('label','smoke')})
             was_stopped=self.stop_event.is_set()
             self.stop_event.set();producer.join(timeout=12)
             job["status"]="failed" if producer_error else "stopped" if was_stopped else "completed"
