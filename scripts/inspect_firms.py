@@ -1,6 +1,6 @@
 import os
 import httpx
-import pandas as pd
+from providers.nasa_firms import parse_firms_csv
 
 from io import StringIO
 from dotenv import load_dotenv
@@ -22,9 +22,8 @@ response = httpx.get(url, timeout=40)
 response.raise_for_status()
 
 #CSV in DataFrame umwandeln
-df = pd.read_csv(StringIO(response.text))
+df = parse_firms_csv(response.text)
 
 #Daten anzeigen
 print("Anzahl Beobachtungen:", len(df))
-print("Spalten:", df.columns.tolist())
-print(df.head(3))
+print("Observation records:", df[:3])

@@ -34,7 +34,7 @@ function cartoRequest(url) {
 }
 async function loadBasemap(name) {
   if(name==='imagery') return imageryStyle();
-  if(!config.cartoKey || config.cartoKey==='PASTE_YOUR_CARTO_BASEMAP_KEY_HERE') throw new Error('Für die Standardkarte fehlt der CARTO-Schlüssel in .env. Wähle alternativ Satellitenbild.');
+  if(!config.cartoKey || config.cartoKey==='PASTE_YOUR_CARTO_BASEMAP_KEY_HERE') return {version:8,glyphs:'https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'}},layers:[{id:'osm',type:'raster',source:'osm'}]};
   if(basemapCache.has(name))return basemapCache.get(name);
   const response=await fetch(cartoRequest(cartoStyle(name)).url,{signal:AbortSignal.timeout(20000)});
   if(!response.ok)throw new Error('Die Karte konnte nicht geladen werden. Prüfe den CARTO-Schlüssel oder wähle Satellitenbild.');
@@ -46,7 +46,7 @@ const switchBasemap=createStyleSwitcher(loadBasemap,(base,name)=>{
   map.setStyle(composeStyle(base,collection(),hotZones,$('show-hotspots').checked,$('show-zones').checked));
   activeBasemap=name;
   $('map-error').hidden=true;
-  $('basemap-note').textContent=name==='imagery'?'Esri-Satellitenbild · Aufnahmedatum unterschiedlich · kein Livebild':'Karte von CARTO / OpenStreetMap';
+  $('basemap-note').textContent=name==='imagery'?'Esri-Satellitenbild · Aufnahmedatum unterschiedlich · kein Livebild':'Kartendaten © OpenStreetMap';
 });
 async function changeBasemap(name) {
   if(!map)return;
@@ -104,7 +104,7 @@ function setHotspots() {
 }
 function confidenceLabel(level) { return level==='high'?'Hoch':level==='nominal'?'Mittel':'Niedrig / unbekannt'; }
 function verificationLabel(value) { return value==='Cross-satellite support'?'Mehrere Satelliten':'Nicht bestätigt'; }
-function translateStatus(status, message) { return ({connected:'Satellitendaten erfolgreich geladen.',partial:'Einige Satelliten sind nicht erreichbar.',configuration_missing:'Trage deinen NASA-FIRMS-Schlüssel in .env ein und starte die App neu.',unavailable:'NASA FIRMS ist momentan nicht erreichbar. Prüfe die Einstellungen.'})[status]||message; }
+function translateStatus(status, message) { return ({connected:'Satellitendaten erfolgreich geladen.',partial:'Einige Satelliten sind nicht erreichbar.',configuration_missing:'Die Satellitendatenquelle ist noch nicht eingerichtet.',unavailable:'NASA FIRMS ist momentan nicht erreichbar. Vorhandene Beobachtungen können veraltet sein.'})[status]||message; }
 function element(tag, className, text) { const node=document.createElement(tag); node.className=className; if (text !== undefined) node.textContent=text; return node; }
 function selectObservation(o) {
   if (!map) return;
@@ -171,7 +171,7 @@ async function refresh() {
     $('network-summary').textContent=`${(data.sources||[]).filter(source=>source.status==='connected').length} / ${selectedSources.size} verbunden`;
     $('source-caption').textContent=`${selectedSources.size} ausgewählte Satelliten`;
     $('source-message').textContent=feedMessage=translateStatus(data.status, data.message);
-    $('checked-at').textContent=`Aktualisiert: ${new Date(data.checked_at).toLocaleTimeString('de-DE',{timeZone:'Europe/Berlin',hour:'2-digit',minute:'2-digit'})} Uhr`;
+    $('checked-at').textContent=data.checked_at?`Letzter Abruf: ${new Date(data.checked_at).toLocaleString('de-DE',{timeZone:'Europe/Berlin',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'})} Uhr`:'Noch keine erfolgreiche Datenerfassung';
   } catch {
     if(id!==requestId)return;
     observations=[];feedStatus='unavailable';feedMessage='Daten konnten nicht abgerufen werden. Prüfe die Verbindung und versuche es erneut.';
@@ -180,7 +180,7 @@ async function refresh() {
     for(const source of selectedSources) $('status-'+source).textContent='Nicht verfügbar';
     $('network-summary').textContent=`0 / ${selectedSources.size} verbunden`;
   } finally {
-    if(id===requestId){$('refresh').disabled=false;$('connection-label').textContent=feedStatus==='connected'?'NASA FIRMS verbunden':feedStatus==='partial'?'Einige Satelliten nicht verfügbar':feedStatus==='configuration_missing'?'API-Schlüssel fehlt':'Satellitendaten nicht verfügbar';$('connection-dot').className=feedStatus==='connected'?'connected':'';render();}
+    if(id===requestId){$('refresh').disabled=false;$('connection-label').textContent=feedStatus==='connected'?'NASA FIRMS verbunden':feedStatus==='partial'?'Einige Satelliten nicht verfügbar':feedStatus==='configuration_missing'?'Satellitendaten noch nicht eingerichtet':'Satellitendaten nicht verfügbar';$('connection-dot').className=feedStatus==='connected'?'connected':'';render();}
   }
 }
 $('refresh').addEventListener('click',refresh);

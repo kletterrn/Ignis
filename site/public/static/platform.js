@@ -1,0 +1,45 @@
+'use strict';
+let incidents=[],perimeters=[],weather=[],publicEvidence=[],selectedIncident=null,timelineTimes=[],playTimer;
+const dateText=value=>value?new Date(value).toLocaleString('de-DE',{timeZone:'UTC'})+' UTC':'Unbekannt';
+const fc=features=>({type:'FeatureCollection',features});
+const feature=(geometry,properties={})=>({type:'Feature',geometry,properties});
+function downloadJSON(name,value){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/geo+json'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+async function apiGet(path){const response=await fetch(path);if(!response.ok)throw new Error('Datenquelle nicht erreichbar');return response.json();}
+function snapshot(){const cutoff=timelineTimes[Number($('timeline').value)]||'9999';const latest=new Map();for(const p of perimeters.filter(p=>!selectedIncident||p.incident_id===selectedIncident).sort((a,b)=>a.acquired_at.localeCompare(b.acquired_at)))if(p.acquired_at<=cutoff)latest.set(p.incident_id,p);return [...latest.values()];}
+function platformLayers(){
+  if(!map||!map.isStyleLoaded())return;
+  const current=snapshot(),areas=fc(current.map(p=>feature(p.geometry,{id:p.id,kind:p.footprint_kind}))),growth=fc(current.filter(p=>p.change?.status==='measured'&&p.change.added_geometry).map(p=>feature(p.change.added_geometry)));
+  const winds=fc(weather.filter(w=>w.current.wind_direction_10m!=null&&w.current.wind_speed_10m!=null&&Date.now()-Date.parse(w.retrieved_at)<3*3600000).map(w=>feature({type:'Point',coordinates:[w.longitude,w.latitude]},{rotation:(w.current.wind_direction_10m+180)%360,label:`${w.current.wind_speed_10m} km/h`}))); 
+  for(const [id,data] of [['reviewed-areas',areas],['area-growth',growth],['weather-wind',winds]]){if(map.getSource(id))map.getSource(id).setData(data);else map.addSource(id,{type:'geojson',data});}
+  if(!map.hasImage('wind-arrow')){const c=document.createElement('canvas');c.width=48;c.height=48;const x=c.getContext('2d');x.strokeStyle='#558ed8';x.lineWidth=4;x.beginPath();x.moveTo(24,40);x.lineTo(24,8);x.moveTo(12,20);x.lineTo(24,8);x.lineTo(36,20);x.stroke();map.addImage('wind-arrow',x.getImageData(0,0,48,48));}
+  const layers=[{id:'reviewed-fill',type:'fill',source:'reviewed-areas',paint:{'fill-color':['match',['get','kind'],'active','#dc5b37','#aa76d2'],'fill-opacity':.25}},{id:'reviewed-outline',type:'line',source:'reviewed-areas',paint:{'line-color':'#9f65cb','line-width':2}},{id:'growth-fill',type:'fill',source:'area-growth',paint:{'fill-color':'#39ae8f','fill-opacity':.4}},{id:'wind-symbols',type:'symbol',source:'weather-wind',layout:{'icon-image':'wind-arrow','icon-size':.65,'icon-rotate':['get','rotation'],'icon-rotation-alignment':'map','icon-allow-overlap':true}}];
+  for(const layer of layers)if(!map.getLayer(layer.id))map.addLayer(layer);
+  for(const [id,toggle] of [['reviewed-fill','show-boundaries'],['reviewed-outline','show-boundaries'],['growth-fill','show-growth'],['wind-symbols','show-wind']])map.setLayoutProperty(id,'visibility',$(toggle).checked?'visible':'none');
+}
+function renderIncidents(){
+  const list=$('incident-list');list.replaceChildren();
+  if(!incidents.length)list.append(element('p','','Noch keine veröffentlichten Brandereignisse. Fehlende Einträge bedeuten keine Entwarnung.'));
+  for(const incident of incidents){const button=element('button',selectedIncident===incident.id?'incident selected':'incident',incident.title);button.type='button';button.onclick=()=>{selectedIncident=selectedIncident===incident.id?null:incident.id;renderIncidents();renderSnapshot();const p=snapshot().find(x=>x.incident_id===incident.id);if(p&&map){const pts=p.geometry.type==='Polygon'?p.geometry.coordinates[0]:p.geometry.coordinates[0][0];map.fitBounds(pts.reduce((b,c)=>b.extend(c),new maplibregl.LngLatBounds()),{padding:70,maxZoom:14});}};list.append(button);}
+}
+function renderSnapshot(){
+  const current=snapshot(),panel=$('incident-detail');panel.replaceChildren();
+  $('timeline-date').textContent=timelineTimes.length?dateText(timelineTimes[Number($('timeline').value)]):'Keine Flächenbeobachtung';
+  if(!current.length)panel.append(element('p','','Für diesen Zeitpunkt ist keine geprüfte Fläche verfügbar.'));
+  for(const p of current){const incident=incidents.find(x=>x.id===p.incident_id);const title=element('h3','',incident?.title||'Ereignis');panel.append(title,element('p','',incident?.description||''),element('strong','',`${number.format(p.burned_area_ha)} ha · ${p.footprint_kind==='active'?'aktive Fläche':'kartierte verbrannte Fläche'}`),element('p','',`Umrissfläche einschließlich Inseln: ${number.format(p.enclosed_area_ha)} ha · ${dateText(p.acquired_at)}`),element('p','',`${p.method} · ${p.resolution_m?`${p.resolution_m} m Quellauflösung`:'Auflösung unbekannt'} · geprüft · Genauigkeit nicht unabhängig nachgewiesen`),element('p','',p.provenance));const change=p.change;panel.append(element('p','',change?.status==='measured'?`Neu kartiert: ${number.format(change.added_area_ha)} ha in ${number.format(change.elapsed_hours)} Std. · ${change.dominant_sector?`größter Zuwachs ${change.dominant_sector}`:'keine eindeutige Hauptrichtung'}`:'Bewegung kann nicht bestimmt werden.'));
+  }
+  for(const e of publicEvidence.filter(e=>!selectedIncident||e.incident_id===selectedIncident)){const img=document.createElement('img');img.src='/api/v1/evidence/'+e.id;img.alt='Vom Operator freigegebener Kamerabeleg';img.style.maxWidth='220px';img.style.borderRadius='8px';panel.append(img);}
+  platformLayers();
+}
+function renderWeather(){const panel=$('weather-detail');panel.replaceChildren();const w=weather.find(x=>x.id===$('weather-location').value)||weather[0];if(!w){panel.textContent='Keine Wetterdaten verfügbar.';return;}const c=w.current;for(const [label,value,unit]of [['Wind',c.wind_speed_10m,'km/h'],['Böen',c.wind_gusts_10m,'km/h'],['Wind aus',c.wind_direction_10m,'°'],['Temperatur',c.temperature_2m,'°C'],['Feuchte',c.relative_humidity_2m,'%'],['Niederschlag',c.precipitation,'mm']]){const row=element('div','weather-row');row.append(element('span','',label),element('strong','',value==null?'Unbekannt':`${number.format(value)} ${unit}`));panel.append(row);}const age=(Date.now()-Date.parse(w.retrieved_at))/60000;panel.append(element('p','metric-caption',`${w.model} · ${w.latitude.toFixed(2)}, ${w.longitude.toFixed(2)} · Modellzeit ${c.time} UTC · ${age>45?'VERALTET · ':''}abgerufen ${dateText(w.retrieved_at)}`),element('p','metric-caption',w.attribution));}
+async function refreshPlatform(){
+  publicEvidence=(await apiGet('/api/v1/evidence').catch(()=>({evidence:[]}))).evidence;
+  try{const [a,b,c,d]=await Promise.all(['/api/v1/incidents','/api/v1/perimeters','/api/v1/weather','/api/v1/health'].map(apiGet));incidents=a.incidents;perimeters=b.perimeters;weather=c.weather;timelineTimes=[...new Set(perimeters.map(p=>p.acquired_at))].sort();$('timeline').max=Math.max(0,timelineTimes.length-1);$('timeline').value=$('timeline').max;const choice=$('weather-location').value;$('weather-location').replaceChildren(...weather.map(w=>{const o=document.createElement('option');o.value=w.id;o.textContent=({north:'Nord',east:'Ost',west:'West',south:'Süd',central:'Mitte'})[w.id]||'Ereignis-Wetter';return o;}));if(weather.some(w=>w.id===choice))$('weather-location').value=choice;$('feed-health').replaceChildren(...d.sources.map(s=>element('p','source-line',`${s.label||s.id.replace('weather_','Wetter · ')}: ${{connected:'verbunden',configuration_missing:'nicht eingerichtet',stale:'veraltet',unavailable:'nicht erreichbar'}[s.status]||s.status} · letzter Erfolg ${dateText(s.last_success_at)}`)));renderIncidents();renderSnapshot();renderWeather();}
+  catch{$('feed-health').textContent='Plattformdaten momentan nicht erreichbar. Vorhandene Daten können veraltet sein.';}
+}
+$('timeline').addEventListener('input',renderSnapshot);
+$('play-timeline').onclick=()=>{if(playTimer){clearInterval(playTimer);playTimer=null;$('play-timeline').textContent='▶ Verlauf';return;}$('timeline').value=0;renderSnapshot();$('play-timeline').textContent='❚❚ Pause';playTimer=setInterval(()=>{const next=Number($('timeline').value)+1;if(next>=timelineTimes.length){clearInterval(playTimer);playTimer=null;$('play-timeline').textContent='▶ Verlauf';return;}$('timeline').value=next;renderSnapshot();},1000);};
+$('weather-location').onchange=renderWeather;
+for(const id of ['show-boundaries','show-growth','show-wind'])$(id).onchange=platformLayers;
+$('export-geojson').onclick=()=>downloadJSON('ignis-gepruefte-flaechen.geojson',fc(perimeters.map(p=>feature(p.geometry,Object.fromEntries(Object.entries(p).filter(([key])=>!['geometry','coverage','change'].includes(key)))))));
+if(map){let scheduled=false;map.on('styledata',()=>{if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;if(!map.getSource('reviewed-areas'))platformLayers();});});map.on('load',platformLayers);}
+refreshPlatform();setInterval(refreshPlatform,60000);

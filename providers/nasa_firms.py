@@ -1,17 +1,14 @@
+import csv
+import math
 import time
-from io import StringIO
 from datetime import datetime, timezone
-
+from io import StringIO
 import httpx
-import pandas as pd
-
 from models.fire_observation import Observation
 
-
 BASE_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv"
-
-CACHE_SECONDS = 600
-cache = {}
+SATELLITE_SOURCES = {"VIIRS_NOAA21_NRT": "NOAA-21 · VIIRS", "VIIRS_NOAA20_NRT": "NOAA-20 · VIIRS", "VIIRS_SNPP_NRT": "Suomi-NPP · VIIRS", "MODIS_NRT": "Terra / Aqua · MODIS"}
+AREA = "5.8,47.2,15.1,55.1"
 
 
 class FIRMSDataError(Exception):
@@ -21,56 +18,45 @@ class FIRMSDataError(Exception):
 
 
 def parse_firms_csv(csv_text):
-
-    df = pd.read_csv(StringIO(csv_text))
-
-    observations = []
-
-    for row in df.to_dict("records"):
-
+    reader = csv.DictReader(StringIO(csv_text.strip()))
+    required = {"latitude", "longitude", "acq_date", "acq_time", "satellite", "instrument", "confidence", "frp", "daynight"}
+    if not required.issubset(reader.fieldnames or []):
+        raise FIRMSDataError("Invalid CSV header")
+    observations, invalid = [], 0
+    for row in reader:
         try:
-            date = str(row["acq_date"])
-            acquisition_time = str(row["acq_time"]).zfill(4)
-
-            detected_at = datetime.strptime(
-                f"{date} {acquisition_time}",
-                #Jahr, Monat, Tag, Stunde, Minute
-                "%Y-%m-%d %H%M"
-            ).replace(tzinfo=timezone.utc)
-
-            observation = Observation(
-                latitude=float(row["latitude"]),
-                longitude=float(row["longitude"]),
-                detected_at=detected_at,
-                source="NASA_FIRMS",
-                satellite=str(row["satellite"]),
-                sensor=str(row["instrument"]),
-                confidence=str(row["confidence"]),
-                frp=float(row["frp"]),
-                daynight=str(row["daynight"])
-            )
-
-            observations.append(observation)
-
-        except (ValueError, TypeError, KeyError):
-            continue
-
+            lat, lon, frp = (float(row[k]) for k in ("latitude", "longitude", "frp"))
+            if not all(math.isfinite(x) for x in (lat, lon, frp)) or not (-90 <= lat <= 90 and -180 <= lon <= 180) or frp < 0:
+                raise ValueError()
+            detected = datetime.strptime(f"{row['acq_date']} {row['acq_time'].zfill(4)}", "%Y-%m-%d %H%M").replace(tzinfo=timezone.utc)
+            observations.append(Observation(lat, lon, detected, "NASA_FIRMS", row["satellite"], row["instrument"], row["confidence"], frp, row["daynight"]))
+        except (ValueError, TypeError, KeyError, AttributeError):
+            invalid += 1
+    # Partial malformed responses must not masquerade as complete coverage.
+    if invalid:
+        raise FIRMSDataError(f"CSV contains {invalid} invalid records")
     return observations
 
 
-def fetch_observations(
-    map_key,
-    source="VIIRS_NOAA21_NRT",
-    area="5.8,47.2,15.1,55.1",
-    day_range=2
-):
+def fetch_observations(map_key, source="VIIRS_NOAA21_NRT", area=AREA, day_range=2):
+    if source not in SATELLITE_SOURCES or day_range not in range(1, 6):
+        raise FIRMSDataError("Invalid source or day range")
+    if not map_key or "REPLACE" in map_key:
+        raise FIRMSDataError("configuration_missing")
+    if area != "world":
+        try:
+            w, s, e, n = map(float, area.split(","))
+            if not (-180 <= w < e <= 180 and -90 <= s < n <= 90):
+                raise ValueError()
+        except ValueError as exc:
+            raise FIRMSDataError("Invalid region") from exc
+    for attempt in range(3):
+        try:
+            response = httpx.get(f"{BASE_URL}/{map_key}/{source}/{area}/{day_range}", timeout=35)
+            response.raise_for_status()
+            return parse_firms_csv(response.text)
+        except httpx.HTTPError:
+            if attempt == 2:
+                raise FIRMSDataError("Provider network or HTTP failure") from None
+            time.sleep(2 ** attempt)
 
-    url = f"{BASE_URL}/{map_key}/{source}/{area}/{day_range}"
-
-    response = httpx.get(url, timeout=40)
-
-    response.raise_for_status()
-
-    observations = parse_firms_csv(response.text)
-
-    return observations
