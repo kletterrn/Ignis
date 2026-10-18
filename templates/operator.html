@@ -28,5 +28,16 @@
       </form><div id="perimeter-review" class="review-list"></div>
       <form id="compare-form"><label>Frühere Fläche<select name="before" id="compare-before"></select></label><label>Spätere Fläche<select name="after" id="compare-after"></select></label><button>Gemessene Änderung berechnen</button></form><pre id="compare-result"></pre>
     </article>
+    <article class="platform-card"><h3>5 / Kalibrierte Stereo-Tiefe</h3>
+      <p>Synchrones Bildpaar und OpenCV-Kalibrierung in Metern. Ausgabe im lokalen Kamerakoordinatensystem; keine Brandkoordinate, Flammenhöhe oder Volumenmessung.</p>
+      <form id="stereo-form"><label>Linkes Bild<input name="left" type="file" accept=".png,.jpg,.jpeg" required></label><label>Rechtes Bild<input name="right" type="file" accept=".png,.jpg,.jpeg" required></label><label>Kalibrierung (JSON)<input name="calibration" type="file" accept=".json" required></label><label>Linke Aufnahme (UTC)<input name="left_at" type="datetime-local" step="0.001" required></label><label>Rechte Aufnahme (UTC)<input name="right_at" type="datetime-local" step="0.001" required></label><button>Stereo-Tiefe berechnen</button></form>
+      <p class="metric-caption">Maximal 50 ms Zeitversatz, 2 Millionen Pixel, unveränderte Kalibrierauflösung. Format und synthetische Testdaten: SENSOR_GUIDE.md im GitHub-Repository.</p>
+    </article>
+    <article class="platform-card"><h3>6 / Radiometrische Thermalmessung</h3>
+      <p>Orthorektifiziertes, georeferenziertes Einband-GeoTIFF mit kalibrierten Strahlungstemperaturen und Sensor-Metadaten. Farbbilder und normales RTSP liefern keine Temperaturmessung.</p>
+      <form id="thermal-form"><label>Radiometrisches GeoTIFF<input name="raster" type="file" accept=".tif,.tiff" required></label><label>Temperaturschwelle (°C)<input name="threshold_c" type="number" min="-100" max="2000" step="0.1" value="60" required></label><button>Temperatur & Wärmekandidat auswerten</button></form>
+      <p class="metric-caption">Strahlungstemperatur hängt von Emissivität, Atmosphäre und Reflexion ab. Eine Schwellenfläche bestätigt keinen Brand. Ergebnisse bleiben lokal und werden nicht automatisch veröffentlicht.</p>
+    </article>
+    <article class="platform-card sensor-output"><h3>Sensorergebnisse · lokal / nicht feldvalidiert</h3><div id="sensor-history"></div><div id="sensor-downloads"></div><pre id="sensor-report"></pre><img id="sensor-preview" alt="Sensorvorschau: Stereo-Tiefe oder Temperaturschwelle" hidden><div id="stereo-view" hidden><canvas id="stereo-cloud" width="720" height="380" aria-label="3D-Punktwolke im lokalen Kamerakoordinatensystem"></canvas><label>Drehwinkel <input id="stereo-yaw" type="range" min="-180" max="180" value="0"></label><p>Lokale 3D-Punktwolke · x rechts, y unten, z vorwärts · Einheiten Meter. Tiefenkarte: nahe blau, fern rot; ungültig schwarz.</p></div></article>
   </div>
 </section>

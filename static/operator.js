@@ -1,5 +1,6 @@
 'use strict';
 let operatorState={},lastUpload=null,drawing=false,drawPoints=[];
+let sensorResult=null;
 async function op(path,body){const response=await fetch('/api/operator/'+path,{method:'POST',headers:{'X-Ignis-CSRF':config.csrf,...(body instanceof FormData?{}:{'Content-Type':'application/json'})},body:body instanceof FormData?body:JSON.stringify(body||{})});const value=await response.json();if(!response.ok)throw new Error(value.error||'Aktion fehlgeschlagen');return value;}
 async function action(fn){try{$('operator-status').textContent='Wird verarbeitet …';const result=await fn();$('operator-status').textContent='Aktion abgeschlossen. '+(result?.status||'');await refreshOperator();return result;}catch(error){$('operator-status').textContent=error.message;}}
 function values(form){return Object.fromEntries(new FormData(form));}
@@ -16,7 +17,42 @@ async function refreshOperator(){
   const review=$('perimeter-review');review.replaceChildren();for(const id of ['compare-before','compare-after']){const select=$(id),old=select.value;select.replaceChildren();for(const p of operatorState.perimeters){const o=document.createElement('option');o.value=p.id;o.textContent=`${p.acquired_at} · ${number.format(p.burned_area_ha)} ha · ${p.review_state}`;select.append(o);}select.value=old||select.options[0]?.value||'';}
   for(const p of operatorState.perimeters){const row=element('div','review-item');row.append(element('p','',`${dateText(p.acquired_at)} · ${number.format(p.burned_area_ha)} ha · ${p.review_state}`),button('Als neue Version bearbeiten',async()=>fillBoundary(p)));if(p.review_state!=='approved')row.append(button('Fläche geprüft: freigeben',()=>op(`perimeters/${p.id}/approve`)));review.append(row);}
   if(operatorState.outbox.length)$('operator-status').textContent=`${operatorState.outbox.length} Veröffentlichungen ausstehend. ${operatorState.outbox[0].error||''}`;
+  const history=$('sensor-history');history.replaceChildren();for(const m of operatorState.measurements||[])history.append(button(`${m.kind} · ${dateText(m.acquired_at)}`,async()=>showSensor(await apiGet('/api/operator/measurements/'+m.id))));
 }
+function sensorMap(){
+  if(!map||!map.isStyleLoaded()||!sensorResult?.candidate_geometry)return;
+  const data=fc([feature(sensorResult.candidate_geometry)]);
+  if(map.getSource('sensor-thermal'))map.getSource('sensor-thermal').setData(data);
+  else{map.addSource('sensor-thermal',{type:'geojson',data});map.addLayer({id:'sensor-thermal-line',type:'line',source:'sensor-thermal',paint:{'line-color':'#f13d17','line-width':3,'line-dasharray':[2,2]}});}
+}
+function drawStereo(){
+  if(!sensorResult?.points_preview)return;
+  const canvas=$('stereo-cloud'),ctx=canvas.getContext('2d'),points=sensorResult.points_preview;
+  ctx.fillStyle='#14241f';ctx.fillRect(0,0,canvas.width,canvas.height);
+  const center=[0,1,2].map(i=>points.reduce((sum,p)=>sum+p[i],0)/points.length);
+  const radius=Math.max(...points.map(p=>Math.hypot(p[0]-center[0],p[1]-center[1],p[2]-center[2])),.001);
+  const angle=Number($('stereo-yaw').value)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
+  const projected=points.map(p=>{const x=p[0]-center[0],y=p[1]-center[1],z=p[2]-center[2];return {x:(c*x+s*z)/radius,y:y/radius,z:(-s*x+c*z)/radius,color:`rgb(${p[3]},${p[4]},${p[5]})`};}).sort((a,b)=>b.z-a.z);
+  for(const p of projected){const scale=300/(2+p.z);ctx.fillStyle=p.color;ctx.fillRect(canvas.width/2+p.x*scale,canvas.height/2+p.y*scale,2,2);}
+  ctx.fillStyle='white';ctx.fillText(`Lokale Kamerakoordinaten · Ausdehnung der Vorschau ±${number.format(radius)} m · keine Georeferenzierung`,12,22);
+}
+function showSensor(result){
+  sensorResult=result;
+  const {points_preview,candidate_geometry,coverage,...summary}=result;
+  $('sensor-report').textContent=JSON.stringify(summary,null,2);
+  $('sensor-preview').src=`/api/operator/measurements/${result.id}/preview`;$('sensor-preview').hidden=false;
+  $('stereo-view').hidden=result.kind!=='stereo';
+  const links=$('sensor-downloads');links.replaceChildren();
+  for(const [artifact,label] of [['report','Messbericht (JSON)'],...(result.kind==='stereo'?[['points','Punktwolke (PLY)'],['depth','Tiefe + Gültigkeit (NPZ)']]:[['candidate','Wärmekandidat (GeoJSON)']])]){const link=document.createElement('a');link.href=`/api/operator/measurements/${result.id}/${artifact}`;link.textContent=label;links.append(link);}
+  if(map?.getSource('sensor-thermal'))map.getSource('sensor-thermal').setData(fc([]));
+  sensorMap();drawStereo();
+  if(map&&candidate_geometry){const polygons=candidate_geometry.type==='Polygon'?[candidate_geometry.coordinates]:candidate_geometry.coordinates;const bounds=new maplibregl.LngLatBounds();for(const rings of polygons)for(const point of rings[0])bounds.extend(point);map.fitBounds(bounds,{padding:70,maxZoom:17});}
+  return result;
+}
+$('stereo-yaw').oninput=drawStereo;
+if(map){map.on('styledata',sensorMap);map.on('idle',()=>{if(!map.getSource('sensor-thermal'))sensorMap();});}
+formHandler('stereo-form',async form=>{const body=new FormData(form);for(const key of ['left_at','right_at'])body.set(key,asUTC(body.get(key)));return showSensor(await op('sensors/stereo',body));});
+formHandler('thermal-form',async form=>showSensor(await op('sensors/thermal',new FormData(form))));
 formHandler('upload-form',async form=>{const r=await op('upload',new FormData(form));lastUpload=r;$('camera-upload').value=r.id;$('upload-result').textContent=`Upload-ID: ${r.id} · ${r.count} Datei(en)`;if(r.geometry)$('boundary-geometry').value=JSON.stringify(r.geometry,null,2);if(r.raster){$('boundary-coverage').value=JSON.stringify(r.raster.coverage,null,2);$('raster-preview').src='/api/operator/assets/raster/'+r.id;$('raster-preview').hidden=false;if(map&&map.isStyleLoaded()){const [w,s,e,n]=r.raster.bounds;if(map.getLayer('operator-raster-layer'))map.removeLayer('operator-raster-layer');if(map.getSource('operator-raster'))map.removeSource('operator-raster');map.addSource('operator-raster',{type:'image',url:$('raster-preview').src,coordinates:[[w,n],[e,n],[e,s],[w,s]]});map.addLayer({id:'operator-raster-layer',type:'raster',source:'operator-raster',paint:{'raster-opacity':.8}},map.getLayer('reviewed-fill')?'reviewed-fill':undefined);map.fitBounds([[w,s],[e,n]],{padding:60});}}return r;});
 formHandler('camera-form',form=>{const d=values(form);if(d.acquired_at)d.acquired_at=asUTC(d.acquired_at);return op('camera/start',d);});
 $('camera-stop').onclick=()=>action(()=>op('camera/stop'));

@@ -111,7 +111,8 @@ def public_evidence(key):
 def state():
     jobs=[{k:v for k,v in x.items() if k not in ("source","preview_path")} for x in store.all("jobs")]
     evidence=[{k:v for k,v in x.items() if k!="path"} for x in store.all("evidence")]
-    return jsonify(incidents=store.all("incidents"),perimeters=store.all("perimeters"),jobs=jobs,evidence=evidence,outbox=[{"id":x["id"],"error":x["error"]} for x in store.pending()])
+    measurements=[{k:v for k,v in item.items() if k not in ('points_preview','candidate_geometry','coverage')} for item in store.all('measurements')]
+    return jsonify(incidents=store.all("incidents"),perimeters=store.all("perimeters"),jobs=jobs,evidence=evidence,measurements=measurements,outbox=[{"id":x["id"],"error":x["error"]} for x in store.pending()])
 
 @app.post("/api/operator/collect")
 def collect_api():
@@ -276,6 +277,46 @@ def imagery_api(action):
         result["provenance"]=f"Before upload {pre['id']}; after upload {post['id']}"
         return jsonify(result)
     raise ValueError("Unsupported action")
+
+@app.post('/api/operator/sensors/<kind>')
+def sensor_api(kind):
+    from services.sensors import stereo_measure,thermal_measure
+    if kind not in ('stereo','thermal'):raise ValueError('Unsupported sensor kind')
+    key=uuid4().hex;root=Path(app.config['DATA_DIR'])/'measurements'/key
+    root.mkdir(parents=True)
+    def save(name,extensions):
+        upload=request.files.get(name)
+        if not upload or Path(upload.filename).suffix.lower() not in extensions:
+            raise ValueError('Unsupported or missing sensor input: '+name)
+        path=root/(name+Path(upload.filename).suffix.lower());upload.save(path)
+        return path
+    if kind=='stereo':
+        left=save('left',{'.png','.jpg','.jpeg'});right=save('right',{'.png','.jpg','.jpeg'})
+        calibration=save('calibration',{'.json'})
+        if calibration.stat().st_size>64_000:raise ValueError('Calibration JSON limit 64 KB')
+        result=stereo_measure(left,right,json.loads(calibration.read_text(encoding='utf-8')),request.form['left_at'],request.form['right_at'],root)
+    else:
+        raster=save('raster',{'.tif','.tiff'})
+        result=thermal_measure(raster,request.form['threshold_c'],root)
+    result.update(id=key,created_at=utcnow())
+    store.put('measurements',result)
+    (root/'report.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
+    return jsonify(result),201
+
+@app.get('/api/operator/measurements/<key>')
+def sensor_result(key):
+    result=store.get('measurements',key)
+    return (jsonify(result),200) if result else (jsonify(error='Not found'),404)
+
+@app.get('/api/operator/measurements/<key>/<artifact>')
+def sensor_artifact(key,artifact):
+    result=store.get('measurements',key)
+    allowed={'preview':'preview.png','report':'report.json'}
+    if result and result['kind']=='stereo':allowed.update(points='points.ply',depth='depth.npz')
+    elif result:allowed['candidate']='hot.geojson'
+    if not result or artifact not in allowed:return jsonify(error='Not found'),404
+    path=Path(app.config['DATA_DIR'])/'measurements'/result['id']/allowed[artifact]
+    return send_file(path,as_attachment=artifact!='preview')
 
 if __name__=="__main__":
     from services.camera import CameraWorker

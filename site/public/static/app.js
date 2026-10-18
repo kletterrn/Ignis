@@ -9,6 +9,7 @@ const {composeStyle, germanStyle, imageryStyle, createStyleSwitcher} = window.Ig
 const {assessObservations} = window.IgnisVerification;
 const basemapCache = new Map();
 let activeBasemap = 'streets';
+let terrainEnabled = false;
 let hotZones = buildHotZones([]);
 const selectedSources = new Set([config.source in config.sources ? config.source : Object.keys(config.sources)[0]]);
 function collection() {
@@ -43,7 +44,8 @@ async function loadBasemap(name) {
 }
 const switchBasemap=createStyleSwitcher(loadBasemap,(base,name)=>{
   // Data is read at apply time, so source/filter changes during loading are preserved.
-  map.setStyle(composeStyle(base,collection(),hotZones,$('show-hotspots').checked,$('show-zones').checked));
+  // Rebuild terrain sources together with their style to avoid stale DEM caches.
+  map.setStyle(composeStyle(base,collection(),hotZones,$('show-hotspots').checked,$('show-zones').checked,terrainEnabled),{diff:false});
   activeBasemap=name;
   $('map-error').hidden=true;
   $('basemap-note').textContent=name==='imagery'?'Esri-Satellitenbild · Aufnahmedatum unterschiedlich · kein Livebild':'Kartendaten © OpenStreetMap';
@@ -59,6 +61,13 @@ async function changeBasemap(name) {
     $('basemap').value=activeBasemap;mapNotice(error.message);$('basemap-note').textContent='Kartenwechsel fehlgeschlagen. Die bisherigen Daten bleiben erhalten.';
   }
 }
+function changeDimension() {
+  if(!map) return;
+  terrainEnabled=$('map-dimension').value==='3d';
+  $('terrain-note').textContent=terrainEnabled?'Geländehöhen werden geladen … Zum Erkennen von Relief näher heranzoomen.':'2D-Ansicht · Flächenangaben werden unabhängig von der Ansicht berechnet.';
+  changeBasemap($('basemap').value);
+  map.easeTo({pitch:terrainEnabled?60:0,bearing:terrainEnabled?map.getBearing():0,duration:reducedMotion?0:700});
+}
 function initMap() {
   if (!window.maplibregl) { mapNotice('Die Karte konnte nicht geladen werden. Prüfe deine Internetverbindung. Die Wärmehinweise bleiben in der Liste sichtbar.'); return; }
   try {
@@ -67,10 +76,22 @@ function initMap() {
     const fireCanvas=document.createElement('canvas');fireCanvas.width=64;fireCanvas.height=64;
     const fireContext=fireCanvas.getContext('2d');fireContext.font='52px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';fireContext.textAlign='center';fireContext.textBaseline='middle';fireContext.fillText('\u{1F525}',32,34);
     map.on('styleimagemissing',event=>{if(event.id==='fire-emoji'&&!map.hasImage(event.id))map.addImage(event.id,fireContext.getImageData(0,0,64,64));});
-    map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'top-right');
+    map.addControl(new maplibregl.NavigationControl({showCompass:true,visualizePitch:true}), 'top-right');
+    map.addControl(new maplibregl.FullscreenControl(), 'top-right');
     map.addControl(new maplibregl.ScaleControl({unit:'metric'}),'bottom-right');
     resetView();
-    map.on('error', () => mapNotice('Karteninhalte konnten nicht geladen werden. Prüfe deine Verbindung oder wähle eine andere Kartenansicht.'));
+    map.on('sourcedata',event=>{
+      if(terrainEnabled&&event.sourceId==='terrain-dem'&&event.isSourceLoaded) $('terrain-note').textContent='3D-Gelände · Höhenmaßstab 1:1 · Höhenmodell, keine Liveaufnahme. Drehen/neigen: rechte Maustaste, Umschalt + Pfeiltasten oder zwei Finger.';
+    });
+    map.on('error', event => {
+      if(event.sourceId==='terrain-dem'||event.error?.message?.includes('elevation-tiles-prod')) {
+        if(!terrainEnabled)return;
+        terrainEnabled=false;$('map-dimension').value='2d';
+        $('terrain-note').textContent='Geländedaten nicht verfügbar. Rückkehr zur 2D-Ansicht; 3D kann erneut gewählt werden.';
+        changeBasemap($('basemap').value);map.easeTo({pitch:0,duration:0});return;
+      }
+      mapNotice('Karteninhalte konnten nicht geladen werden. Prüfe deine Verbindung oder wähle eine andere Kartenansicht.');
+    });
     // No style.load dependency: style diffing can remove overlays without firing it.
     map.once('load',()=>changeBasemap($('basemap').value));
       map.on('click','zone-fill',event=>{
@@ -193,6 +214,7 @@ $('confidence').addEventListener('change',render);$('search').addEventListener('
 $('show-zones').addEventListener('change',setZones);
 $('show-hotspots').addEventListener('change',setHotspots);$('fit-map').addEventListener('click',resetView);
 $('basemap').addEventListener('change',()=>changeBasemap($('basemap').value));
+$('map-dimension').addEventListener('change',changeDimension);
 $('export').addEventListener('click',()=>{
   const columns=['latitude','longitude','detected_at','satellite','sensor','confidence','frp','daynight','source','dataset','verification','verification_detail'];
   const cell=value=>'"'+String(value).replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"';

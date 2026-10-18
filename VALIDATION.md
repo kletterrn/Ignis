@@ -2,9 +2,37 @@
 
 This is an implemented field-pilot platform, with significant detection and field-validation limits. It is not an operational wildfire warning system.
 
+## 3D, stereo and thermal increment
+
+- 25 Python checks and two JavaScript map checks pass locally. New checks run real
+  OpenCV stereo matching on a deterministic synthetic 4 m plane, reject invalid
+  calibration and unsynchronized pairs, verify scaled Kelvin temperatures,
+  nodata coverage and projected threshold area, and enforce local-only results
+  without automatic publication. CI now installs OpenCV; PyTorch-specific checks
+  still require the local locked environment.
+- Stereo reference result: median 4.000 m, valid-pixel fraction approximately
+  43.52%, depth range 3.979–4.021 m. This is synthetic geometry, not real sensor
+  accuracy. PLY/NPZ exports and a rotatable local point cloud are implemented.
+- Synthetic thermal input: 20 / 80 °C, 256 hot pixels at 4 m² each, candidate
+  footprint 0.1024 ha. Temperature metadata, scale/offset, masks, unit conversion
+  and input/calibration provenance are retained. Thermal thresholds never create
+  confirmed incidents or approved perimeters automatically.
+- Public/shared map has real Terrarium DEM terrain at vertical scale 1:1,
+  2D/3D switching, compass and fullscreen. MapLibre was updated from 5.6.0 to
+  5.24.0 after browser testing found terrain-switching renderer failures; styles
+  rebuild their DEM sources together. Terrain tiles were verified reachable with
+  CORS. DEM resolution/date vary and are not survey accuracy claims.
+- Code is Apache-2.0 with third-party data notices. SENSOR_GUIDE.md documents the
+  sensor contract and fixtures; RESPONDER_READINESS.md records agency acceptance
+  gates. No real stereo/thermal hardware calibration or field test was available.
+- Browser operator checks completed both sensor upload forms using the synthetic
+  fixtures, produced the expected values and download links, and retained result
+  history across reload. Shared 3D imagery terrain rendered successfully after
+  the renderer update. A forced terrain-provider outage was not browser-tested.
+
 ## Passed locally
 
-- 21 Python regression tests (including preservation of local detail in large camera frames): CSV/schema validation, UTC parsing, provider timeouts without credential disclosure, coordinate and polygon validity, independent area calculation, holes, symmetric growth, missing coverage, contraction, record deduplication, durable publication retry, access/origin/CSRF protection, review/publish/withdraw, upload rejection, interrupted camera recovery and temporal confirmation.
+- 25 Python regression tests (including preservation of local detail in large camera frames): CSV/schema validation, UTC parsing, provider timeouts without credential disclosure, coordinate and polygon validity, independent area calculation, holes, symmetric growth, missing coverage, contraction, record deduplication, durable publication retry, access/origin/CSRF protection, review/publish/withdraw, upload rejection, interrupted camera recovery and temporal confirmation.
 - TypeScript type checking and production Site build.
 - Local D1-backed HTTP checks: missing credentials rejected; collector/operator role separation; browser-origin rejection; invalid coordinates rejected; repeated ingestion deduplicated; approved perimeter visible only with a published incident; withdrawal hides it; private evidence unavailable. Windows Miniflare sometimes restarts after an early rejected POST; the check retries that specific adapter response. Product publication retries transient failures independently.
 - Real model weights downloaded from the official PyroVision v0.2.0 release, verified against SHA256 `e536564ef97d2aed90a7572f08ca752087fc10f7c3544911edca70f473d55fc7`; all model state keys matched the current Holocron implementation.

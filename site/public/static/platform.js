@@ -41,5 +41,5 @@ $('play-timeline').onclick=()=>{if(playTimer){clearInterval(playTimer);playTimer
 $('weather-location').onchange=renderWeather;
 for(const id of ['show-boundaries','show-growth','show-wind'])$(id).onchange=platformLayers;
 $('export-geojson').onclick=()=>downloadJSON('ignis-gepruefte-flaechen.geojson',fc(perimeters.map(p=>feature(p.geometry,Object.fromEntries(Object.entries(p).filter(([key])=>!['geometry','coverage','change'].includes(key)))))));
-if(map){let scheduled=false;map.on('styledata',()=>{if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;if(!map.getSource('reviewed-areas'))platformLayers();});});map.on('load',platformLayers);}
+if(map){let scheduled=false;map.on('styledata',()=>{if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;if(!map.getSource('reviewed-areas'))platformLayers();});});map.on('load',platformLayers);map.on('idle',()=>{if(!map.getSource('reviewed-areas'))platformLayers();});}
 refreshPlatform();setInterval(refreshPlatform,60000);

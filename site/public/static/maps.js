@@ -14,11 +14,11 @@
   function imageryStyle() {
     return {version:8,glyphs:'https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',sources:{imagery:{type:'raster',tiles:['https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,maxzoom:19,attribution:'Imagery © <a href="https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9">Esri</a>, Vantor, Earthstar Geographics, and the GIS User Community'}},layers:[{id:'imagery',type:'raster',source:'imagery'}]};
   }
-  function composeStyle(base,detections,zones,showHotspots,showZones) {
+  function composeStyle(base,detections,zones,showHotspots,showZones,showTerrain=false) {
     const points=showHotspots?'visible':'none',areas=showZones?'visible':'none';
     const unclustered=['!',['has','point_count']];
     const color=['match',['get','level'],'high','#ff8853','nominal','#eabf69','#a6b49c'];
-    return {...base,sources:{...base.sources,'hot-zones':{type:'geojson',data:zones},detections:{type:'geojson',data:detections,cluster:true,clusterMaxZoom:11,clusterRadius:35}},layers:[...base.layers.filter(layer=>!overlayIds.includes(layer.id)),
+    return {...base,...(showTerrain?{terrain:{source:'terrain-dem',exaggeration:1},sky:{}}:{}),sources:{...base.sources,...(showTerrain?{'terrain-dem':{type:'raster-dem',tiles:['https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png'],encoding:'terrarium',tileSize:256,maxzoom:15,attribution:'Terrain: <a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">Mapzen / source credits</a> · Europe: Copernicus EU-DEM · Global: USGS / NOAA'}}:{}),'hot-zones':{type:'geojson',data:zones},detections:{type:'geojson',data:detections,cluster:true,clusterMaxZoom:11,clusterRadius:35}},layers:[...base.layers.filter(layer=>!overlayIds.includes(layer.id)),
       {id:'zone-fill',type:'fill',source:'hot-zones',layout:{visibility:areas},paint:{'fill-color':'#ff6c42','fill-opacity':.22}},
       {id:'zone-outline',type:'line',source:'hot-zones',layout:{visibility:areas},paint:{'line-color':'#ff995e','line-width':2,'line-dasharray':[3,2]}},
       {id:'clusters',type:'circle',source:'detections',filter:['has','point_count'],layout:{visibility:points},paint:{'circle-color':'#fc925c','circle-radius':['step',['get','point_count'],12,10,17,50,23],'circle-opacity':.9,'circle-stroke-width':6,'circle-stroke-color':'#fc925c','circle-stroke-opacity':.16}},

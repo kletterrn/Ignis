@@ -2,7 +2,15 @@
 
 [Öffentliche Plattform](https://ignis-fire-monitoring.davidkhaliqi05.chatgpt.site) · [Cloud-Collector](https://github.com/kletterrn/Ignis/actions/workflows/collect.yml)
 
-Deutschlandweiter, nichtkommerzieller Feldpilot: Satelliten-Wärmehinweise, modelliertes Wetter, lokale Kameraauswertung und geprüfte Brandflächen mit zeitlichem Vergleich.
+Deutschlandweiter, nichtkommerzieller Feldpilot: Satelliten-Wärmehinweise, modelliertes Wetter, lokale Kameraauswertung und geprüfte Brandflächen mit zeitlichem Vergleich. Der vollständige Python- und Webapp-Quellcode ist unter [Apache-2.0](LICENSE) offen verfügbar; siehe [Mitwirken](CONTRIBUTING.md) und [Drittanbieterhinweise](THIRD_PARTY_NOTICES.md).
+
+## 3D-Ansicht und behördliche Erprobung
+
+Unter **Darstellung → 3D-Gelände** wird ein echtes Höhenmodell mit Höhenmaßstab 1:1 geladen. Näher heranzoomen; mit rechter Maustaste oder Umschalt + Pfeiltasten drehen/neigen. Kartenstil, geprüfte Brandflächen, Zeitverlauf und Wind bleiben nutzbar; Vollbild ist über die Kartensteuerung verfügbar. Ein Ausfall der Höhendaten führt zur beschrifteten 2D-Ansicht zurück. Die DEM-Kacheln kommen aus dem offenen [Terrain-Tiles-Datensatz](https://registry.opendata.aws/terrain-tiles/); Auflösung und Datenalter variieren.
+
+3D zeigt das Gelände mit kartierten Flächen, keine gemessene Flammenhöhe oder Brandvolumen. Hektarangaben bleiben unabhängig davon in EPSG:3035 berechnet. Für Behörden und Einsatzkräfte beschreibt [RESPONDER_READINESS.md](RESPONDER_READINESS.md) die vorhandenen Abläufe und die offenen Abnahmen. Die Plattform ist zur begleiteten Erprobung verfügbar; Einsatzreife ist noch nicht nachgewiesen.
+
+Die lokale Konsole enthält zusätzlich **Stereo-Tiefe mit drehbarer 3D-Punktwolke** und **radiometrische Thermalauswertung**. Benötigt werden echte Kalibrierparameter/synchrone Bildpaare bzw. orthorektifizierte Temperatur-GeoTIFFs mit Sensor-Metadaten. [SENSOR_GUIDE.md](SENSOR_GUIDE.md) dokumentiert Formate, Grenzen, Exporte und reproduzierbare synthetische Testdaten. Normales Video liefert keine Temperaturen; Stereo-Kamerakoordinaten liefern ohne georeferenzierten Kamerapose-Nachweis keinen Brandort.
 
 ## Start unter Windows
 
@@ -18,6 +26,7 @@ Operator: `http://127.0.0.1:8000/operator`. Öffentliche lokale Ansicht: `http:/
 ```powershell
 uv sync --frozen
 uv run pytest -q
+node --test tests/*.test.cjs
 uv run python -m scripts.collect
 ```
 
