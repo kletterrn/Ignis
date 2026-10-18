@@ -13,6 +13,14 @@ async function list(kind:string) {
 }
 async function published() {return (await list("incidents")).filter(x=>x.review_state==="published");}
 export async function handle(request:Request) {
+  const response=await route(request);
+  if(request.method==='GET'&&request.headers.get('Origin')==='https://kletterrn.github.io') {
+    response.headers.set('Access-Control-Allow-Origin','https://kletterrn.github.io');
+    response.headers.set('Vary','Origin');
+  }
+  return response;
+}
+async function route(request:Request) {
   try {
     if(!env.DB)return json({error:"Database configuration unavailable"},503);
     const url=new URL(request.url), path=url.pathname;

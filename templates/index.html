@@ -20,7 +20,7 @@
 <body>
   <header class="site-header">
     <div class="header-inner">
-      <a class="brand" href="/" aria-label="Project Ignis – Startseite"><span class="brand-icon" aria-hidden="true">✳</span> Project Ignis</a>
+      <a class="brand" href="{{ config_data.homeUrl|default('/') }}" aria-label="Project Ignis – Startseite"><span class="brand-icon" aria-hidden="true">✳</span> Project Ignis</a>
       <span class="header-subtitle">Waldbrände im Blick</span>
       <span id="clock" class="clock" aria-label="UTC-Datum">–</span>
     </div>

@@ -1,6 +1,7 @@
 'use strict';
 const config = JSON.parse(document.getElementById('app-config').textContent);
 const $ = (id) => document.getElementById(id);
+const apiUrl = path => (config.apiBase||'')+path;
 let observations = [], visible = [], hours = 24, feedStatus = 'loading', feedMessage = '', map, popup, requestId = 0;
 const number = new Intl.NumberFormat('de-DE', {maximumFractionDigits: 1});
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -182,7 +183,7 @@ async function refresh() {
   if(!selectedSources.size){observations=[];feedStatus='configuration_missing';feedMessage='Wähle mindestens einen Satelliten aus.';$('source-message').textContent=feedMessage;$('connection-label').textContent='Kein Satellit ausgewählt';$('network-summary').textContent='0 ausgewählt';$('source-caption').textContent='Keine Datenquelle ausgewählt';$('connection-dot').className='';$('refresh').disabled=false;render();return;}
   $('refresh').disabled=true;$('connection-label').textContent='Satellitendaten werden aktualisiert …';
   try {
-    const response=await fetch(`/api/observations?hours=${hours}&sources=${encodeURIComponent([...selectedSources].join(','))}`,{signal:AbortSignal.timeout(55000)});
+    const response=await fetch(apiUrl(`/api/observations?hours=${hours}&sources=${encodeURIComponent([...selectedSources].join(','))}`),{signal:AbortSignal.timeout(55000)});
     const data=await response.json();
     if (id!==requestId) return;
     if (!Array.isArray(data.observations)) throw new Error('Ungültige Antwort');
