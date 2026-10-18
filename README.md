@@ -1,5 +1,7 @@
 # Ignis · Feuerbeobachtung
 
+[Öffentliche Plattform](https://ignis-fire-monitoring.davidkhaliqi05.chatgpt.site) · [Cloud-Collector](https://github.com/kletterrn/Ignis/actions/workflows/collect.yml)
+
 Deutschlandweiter, nichtkommerzieller Feldpilot: Satelliten-Wärmehinweise, modelliertes Wetter, lokale Kameraauswertung und geprüfte Brandflächen mit zeitlichem Vergleich.
 
 ## Start unter Windows
@@ -43,7 +45,7 @@ Keine kostenpflichtigen Dienste oder Abonnements werden automatisch aktiviert. G
 
 ## Validierung und Grenzen
 
-Siehe [VALIDATION.md](VALIDATION.md) für gemessene Ergebnisse und noch offene Feldprüfungen. Der experimentelle PyroVision-Klassifikator hat auf der kleinen geprüften Rauchsequenz alle positiven Stichproben bei Schwelle 0,7 verpasst. Er eignet sich in diesem Zustand ausschließlich zur begleiteten Erprobung. Kein Alarm ist keine Entwarnung.
+Siehe [VALIDATION.md](VALIDATION.md) für gemessene Ergebnisse und noch offene Feldprüfungen. Die ursprüngliche Ganzbildauswertung verpasste alle 14 Rauch-Stichproben. Überlappende Ausschnitte erkannten in einer zweiten unabhängigen Sequenz 13 von 14 Rauchbildern, markierten jedoch auch alle 14 Negativbilder. Der Klassifikator bleibt wegen dieser Fehlalarme experimentell und benötigt Operatorprüfung. Kein Alarm ist keine Entwarnung.
 
 ```powershell
 uv run python -m scripts.fetch_validation
@@ -52,4 +54,4 @@ uv run python -m scripts.replay
 uv run python -m scripts.validate_perimeter kandidat.geojson referenz.geojson
 ```
 
-HPWREN-FIgLib-Aufnahmen werden nur lokal zur Validierung heruntergeladen: © HPWREN / UCSD, https://www.hpwren.ucsd.edu/. Die Auswahl vom Oktober 2026 liegt nach der Veröffentlichung der verwendeten Modellgewichte im Juli 2022. Das ist ein kleiner zeitlich unabhängiger Test einer Kamera, keine repräsentative deutsche Feldvalidierung. PyroVision und Holocron: Apache-2.0; Modellquelle und Prüfsumme stehen in `services/camera.py`. Wetter: DWD / Open-Meteo, CC BY 4.0. Karten: OpenStreetMap, Esri und deren Datenanbieter; Attribution bleibt sichtbar. Sentinel-Daten: Copernicus Sentinel.
+HPWREN-FIgLib-Aufnahmen werden nur lokal zur Validierung heruntergeladen: © HPWREN / UCSD, https://www.hpwren.ucsd.edu/. Die Referenzsequenzen vom September und Oktober 2026 liegen nach der Veröffentlichung der verwendeten Modellgewichte im Juli 2022. Das ist ein kleiner zeitlich unabhängiger Test einer Kamera, keine repräsentative deutsche Feldvalidierung. PyroVision und Holocron: Apache-2.0; Modellquelle und Prüfsumme stehen in `services/camera.py`. Wetter: DWD / Open-Meteo, CC BY 4.0. Karten: OpenStreetMap, Esri und deren Datenanbieter; Attribution bleibt sichtbar. Sentinel-Daten: Copernicus Sentinel.

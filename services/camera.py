@@ -32,11 +32,16 @@ class Classifier:
         self.normalize = Normalize([.485,.456,.406],[.229,.224,.225])
 
     def score(self, image):
-        # Match the PyroVision ReXNet 256x384 padded input and ImageNet normalization.
-        image = ImageOps.pad(image.convert("RGB"), (384,256), method=Image.Resampling.BILINEAR, color=0)
-        tensor = self.normalize(self.to_tensor(image)).unsqueeze(0).to(self.device)
+        image=image.convert('RGB')
+        crops=[image]
+        # Overlapping crops preserve small plumes otherwise lost when a large frame is resized.
+        if image.width>=768 and image.height>=512:
+            w,h=image.size
+            crops.extend(image.crop((int(x*w),int(y*h),int((x+.5)*w),int((y+.5)*h))) for y in (0,.25,.5) for x in (0,.25,.5))
+        # Every crop uses the pretrained PyroVision 256x384 input and normalization.
+        tensor = self.torch.stack([self.normalize(self.to_tensor(ImageOps.pad(crop,(384,256),method=Image.Resampling.BILINEAR,color=0))) for crop in crops]).to(self.device)
         with self.torch.inference_mode():
-            return float(self.model(tensor).sigmoid().item())
+            return float(self.model(tensor).sigmoid().max().item())
 
 class CameraWorker:
     def __init__(self, store, root):

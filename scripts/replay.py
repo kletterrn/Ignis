@@ -1,5 +1,5 @@
 """Offline acceptance replay in an isolated store; never publishes fixture incidents."""
-import json,time,shutil,tempfile
+import csv,json,time,shutil,tempfile
 from pathlib import Path
 from PIL import Image
 from shapely.geometry import mapping,box
@@ -8,12 +8,17 @@ from services.camera import CameraWorker
 from services.store import Store
 
 def main():
-    images=sorted(Path('data/validation').glob('*/*.jpg'))
+    images=[Path(row['path']) for row in csv.DictReader(Path('data/validation/manifest.csv').open(encoding='utf-8'))]
     if not images:raise ValueError('Run python -m scripts.fetch_validation first')
     with tempfile.TemporaryDirectory() as folder:
-        root=Path(folder);sequence=root/'sequence';sequence.mkdir()
-        for index,path in enumerate(images):
-            with Image.open(path) as im:im.convert('RGB').save(sequence/f'{index:04d}.jpg')
+        import cv2,numpy as np
+        root=Path(folder);video=root/'replay.mp4'
+        writer=cv2.VideoWriter(str(video),cv2.VideoWriter_fourcc(*'mp4v'),1,(768,512))
+        assert writer.isOpened(),'Video encoder unavailable'
+        for path in images:
+            with Image.open(path) as im:frame=np.array(im.convert('RGB').resize((768,512)))
+            writer.write(cv2.cvtColor(frame,cv2.COLOR_RGB2BGR))
+        writer.release()
         app.store=Store(root/'state.sqlite');app.app.config['DATA_DIR']=str(root)
         app.worker=CameraWorker(app.store,root/'evidence')
         client=app.app.test_client()
@@ -21,7 +26,7 @@ def main():
             r=client.post('/api/operator/'+path,json=body,headers={'X-Ignis-CSRF':app.CSRF})
             assert r.status_code<300,r.json
             return r.json
-        job_id=app.worker.start(str(sequence),'sequence')
+        job_id=app.worker.start(str(video),'video')
         app.worker.thread.join(timeout=90)
         job=app.store.get('jobs',job_id)
         assert job['status']=='completed',job

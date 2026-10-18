@@ -168,3 +168,16 @@ def test_camera_temporal_confirmation(tmp_path):
     assert store.get('jobs',key)['status']=='completed'
     assert store.get('jobs',key)['frames']==3
     assert len(store.all('evidence'))==1
+
+def test_high_resolution_local_signal_survives_downsampling():
+    torch=pytest.importorskip('torch')
+    pytest.importorskip('cv2')
+    from torchvision.transforms import ToTensor
+    from PIL import Image
+    from services.camera import Classifier
+    model=Classifier.__new__(Classifier)
+    model.torch=torch;model.device='cpu';model.to_tensor=ToTensor();model.normalize=lambda x:x
+    model.model=lambda batch:4*(batch.mean(dim=(1,2,3))-.5)
+    image=Image.new('RGB',(768,512),'black');image.paste('white',(0,0,384,256))
+    assert model.score(image)>.8
+    assert model.score(Image.new('RGB',(384,256),'black'))<.2

@@ -4,19 +4,19 @@ This is an implemented field-pilot platform, with significant detection and fiel
 
 ## Passed locally
 
-- 20 Python regression tests: CSV/schema validation, UTC parsing, provider timeouts without credential disclosure, coordinate and polygon validity, independent area calculation, holes, symmetric growth, missing coverage, contraction, record deduplication, durable publication retry, access/origin/CSRF protection, review/publish/withdraw, upload rejection, interrupted camera recovery and temporal confirmation.
+- 21 Python regression tests (including preservation of local detail in large camera frames): CSV/schema validation, UTC parsing, provider timeouts without credential disclosure, coordinate and polygon validity, independent area calculation, holes, symmetric growth, missing coverage, contraction, record deduplication, durable publication retry, access/origin/CSRF protection, review/publish/withdraw, upload rejection, interrupted camera recovery and temporal confirmation.
 - TypeScript type checking and production Site build.
 - Local D1-backed HTTP checks: missing credentials rejected; collector/operator role separation; browser-origin rejection; invalid coordinates rejected; repeated ingestion deduplicated; approved perimeter visible only with a published incident; withdrawal hides it; private evidence unavailable. Windows Miniflare sometimes restarts after an early rejected POST; the check retries that specific adapter response. Product publication retries transient failures independently.
 - Real model weights downloaded from the official PyroVision v0.2.0 release, verified against SHA256 `e536564ef97d2aed90a7572f08ca752087fc10f7c3544911edca70f473d55fc7`; all model state keys matched the current Holocron implementation.
-- End-to-end isolated replay: 28 real camera archive frames processed; one image manually selected as evidence; two explicitly synthetic georeferenced boundaries approved; 15.948 ha added area calculated; publication visibility and withdrawal checked. No fixture incidents were sent to the public site.
+- End-to-end isolated MP4 replay: 28 real Getty Fire camera archive frames encoded as a clearly accelerated video and processed; one automatic candidate and one image manually selected as evidence; two explicitly synthetic georeferenced boundaries approved; 15.948 ha added area calculated; publication visibility and withdrawal checked. No fixture incidents were sent to the public site.
 - Geometry arithmetic: 298.9868847 ha versus 298.9868881 ha from independent WGS84 geodesic calculation, a relative difference of approximately 0.00000115%. This validates the area calculation for that test geometry, not the accuracy of fire delineation.
 - dNBR processing tested on georeferenced four-band synthetic before/after rasters. All-cloud coverage correctly prevents an outline. Drone raster previews retain georeferencing and exclude nodata from their observed footprint.
 
-## Camera detection result: insufficient for field reliance
+## Camera detection results: sensitivity improved, false alarms remain unacceptable
 
 The model was evaluated on 28 sampled images from the October 15, 2026 HPWREN FIgLib Henderson Fire / Buffalo Bump South sequence, after the July 2022 weight release. Labels follow the archive's offset from first visible plume: 14 negative and 14 positive frames. Credit: [HPWREN / UCSD](https://www.hpwren.ucsd.edu/FIgLib/).
 
-At the implemented 0.7 score threshold:
+The initial whole-frame baseline, at score threshold 0.7:
 
 | Metric | Result |
 | --- | --- |
@@ -29,7 +29,23 @@ At the implemented 0.7 score threshold:
 | Full local worker replay | Approximately 18 frames/second |
 | False alerts per hour | Not established; sparse minute-spaced images are not continuous video |
 
-There was no threshold tuning or model training against this sample. Three consecutive positive samples are needed for an automatic review item; human capture is available regardless of the model score. The small sample does not represent German conditions, night scenes, fog, weather extremes, other cameras or continuous alert behavior. GPU acceleration was unavailable in the installed PyTorch runtime; GPU throughput was not measured. Raw JSON results are reproducible under ignored `outputs/` using the scripts documented in README.
+The initial failure was traced to lost plume detail during whole-frame resizing. The final implementation evaluates the full frame plus nine overlapping half-frame crops, each with the same pretrained normalization and input size, and uses the maximum score. The threshold remains 0.7; no model training was performed. The Henderson sequence was used to diagnose that change and is not a held-out test of the revised algorithm.
+
+A second, previously unused sequence — September 9, 2026 Getty Fire / Mount Wilson West — provides the final chronological holdout of 14 negative and 14 positive samples:
+
+| Final crop-based metric | Result |
+| --- | --- |
+| True positives / false negatives | 13 / 1 |
+| False positives / true negatives | 14 / 0 |
+| Recall | 92.86% |
+| Precision | 48.15% |
+| CPU classifier throughput | Approximately 3.17 complete frames/second |
+| MP4 worker replay throughput | Approximately 3.64 frames/second |
+| False alerts per hour | Not established on continuous footage |
+
+These results do **not** establish operational reliability. Cropping improves sensitivity but introduces severe false positives on this sequence. Baseline and holdout summaries are committed in `validation/results.json`; full local scores are under `outputs/`.
+
+Three consecutive positive samples are needed for an automatic review item; human capture is available regardless of the model score. The small sample does not represent German conditions, night scenes, fog, weather extremes, other cameras or continuous alert behavior. GPU acceleration was unavailable in the installed PyTorch runtime; GPU throughput was not measured. Raw JSON results are reproducible under ignored `outputs/` using the scripts documented in README.
 
 ## Hosted verification
 
@@ -37,7 +53,7 @@ There was no threshold tuning or model training against this sample. Three conse
 - Live collection/publication of five DWD ICON / Open-Meteo model points succeeded. All four FIRMS sources report `configuration_missing`, as requested. No synthetic fire events are published.
 - Anonymous public reads work. Unauthenticated cloud writes return 401; `/operator` is absent from the hosted Site.
 - Public browser review showed the map, unconfigured satellite state, live weather values and source-health details without JavaScript errors.
-- Cloud collector scheduling and CI results are recorded in GitHub Actions; the schedule targets minutes 7, 22, 37 and 52. A successful runner execution verifies cloud collection independently of this PC; scheduled timing is still best effort.
+- [GitHub CI](https://github.com/kletterrn/Ignis/actions/runs/39164781109) passed for the implementation. [Cloud collector run 39164873501](https://github.com/kletterrn/Ignis/actions/runs/39164873501) completed successfully on GitHub and updated the public weather data at 20:47 UTC; the schedule targets minutes 7, 22, 37 and 52. This verifies the cloud execution path independently of local processing; the PC was not physically powered off during the test. Scheduled timing remains best effort. Camera tests requiring OpenCV/PyTorch run locally; the lightweight cloud CI intentionally skips those optional-dependency tests.
 
 ## Intentionally unconfigured or still unverified
 
