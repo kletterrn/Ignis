@@ -31,7 +31,7 @@ def collect(store, map_key, area=AREA, extra_points=None):
         statuses.append(status)
     context=annotate_industry(records)
     previous=store.get('sources','industrial_context') or {}
-    context.update(id='industrial_context',label='Industriekontext · UBA PRTR 2024',checked_at=now,last_success_at=now if context['status']=='connected' else previous.get('last_success_at'))
+    context.update(id='industrial_context',label='Industriekontext · UBA/EEA 2024',checked_at=now,last_success_at=now if context['status']=='connected' else previous.get('last_success_at'))
     statuses.append(context);store.put('sources',context)
     for item in records:store.put('observations',item)
     for key, (lat, lon) in {**WEATHER_POINTS,**(extra_points or {})}.items():

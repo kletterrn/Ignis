@@ -17,7 +17,7 @@ def test_firms_preserves_pixel_dimensions_and_optional_static_type():
 
 
 def test_industry_context_preserves_raw_observations_and_reports_outages(monkeypatch,tmp_path):
-    cache=tmp_path/'context.json';cache.write_text(json.dumps({'time':time.time(),'facilities':[{'name':'Reference steel works','latitude':50,'longitude':10}]}))
+    cache=tmp_path/'context.json';cache.write_text(json.dumps({'de':{'schema':2,'time':time.time(),'facilities':[{'name':'Reference steel works','latitude':50,'longitude':10,'identifier':'reference'}]},'eea':{'schema':2,'time':time.time(),'facilities':[]}}))
     records=[{'latitude':50,'longitude':10.001},{'latitude':50,'longitude':10.03},{'latitude':50,'longitude':10.03,'thermal_type':2}]
     result=annotate_industry(records,cache)
     assert result=={'status':'connected','count':2}
@@ -25,9 +25,10 @@ def test_industry_context_preserves_raw_observations_and_reports_outages(monkeyp
     assert records[1]['context_kind']=='unknown' and records[2]['context_kind']=='static_source'
     def fail():raise httpx.ReadTimeout('unavailable')
     monkeypatch.setattr('providers.industrial.fetch_facilities',fail)
+    monkeypatch.setattr('providers.industrial.fetch_border_facilities',fail)
     fresh=[{'latitude':50,'longitude':10}]
     assert annotate_industry(fresh,tmp_path/'missing.json')['status']=='unavailable'
     assert fresh[0]['context_kind']=='unknown' and fresh[0]['context_checked_at'] is None
-    cache.write_text(json.dumps({'time':1,'facilities':[{'name':'Old reference','latitude':50,'longitude':10}]}))
+    cache.write_text(json.dumps({'time':1,'facilities':[{'name':'Old reference','latitude':50,'longitude':10,'identifier':'old'}]}))
     stale=cache.read_bytes();assert annotate_industry(fresh,cache)['status']=='unavailable'
     assert fresh[0]['context_kind']=='industrial' and cache.read_bytes()==stale

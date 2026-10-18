@@ -128,7 +128,7 @@ function element(tag, className, text) { const node=document.createElement(tag);
 function selectObservation(o) {
   if (!map) return;
   const coordinates=[Number(o.longitude),Number(o.latitude)];
-  map.flyTo({center:coordinates,zoom:Math.max(map.getZoom(),10),duration:reducedMotion?0:900});
+  map.flyTo({center:coordinates,offset:[0,90],zoom:Math.max(map.getZoom(),10),duration:reducedMotion?0:900});
   popup?.remove();
   const content=element('div','popup-content');
   content.append(element('div','popup-title',industrial(o)?'Wärmehinweis im Industrie-/statischen Kontext':'Wärmehinweis · ungeprüft'));

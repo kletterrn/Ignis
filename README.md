@@ -38,6 +38,10 @@ uv run python -m scripts.collect
 4. Fläche als neue Version speichern und ausdrücklich freigeben. Zwei kompatible freigegebene Versionen vergleichen.
 5. Ereignis veröffentlichen. Nur die ausgewählten JPEG-Vorschaubilder (maximal fünf) und geprüften Flächen werden hochgeladen. „Zurückziehen“ blendet Ereignis, Flächen und Bilder öffentlich aus. Bei Netzwerkfehlern bleibt die Veröffentlichung in der lokalen Outbox und kann erneut gesendet werden.
 
+Satellitenpunkte werden mit dem UBA-PRTR-Register und dem EEA-Industrieanlagenregister für Nachbarländer im Kartenausschnitt (Berichtsjahr 2024) abgeglichen. Hinweise innerhalb von 1 km eines registrierten Betriebs erscheinen grau mit Namen, Abstand und Quelle. Das ist Standortkontext, keine bestätigte Ursache: Auch Industrieanlagen können brennen. Rohbeobachtungen bleiben erhalten und sind standardmäßig sichtbar; „Industriekontext“ blendet sie bei Bedarf aus. Fehlende Registereinträge bedeuten nicht, dass keine Industrie vorhanden ist. Der vollständige Registerabzug wird höchstens wöchentlich geladen und in GitHub Actions ohne Zugangsdaten gecacht.
+
+Die früheren 0,05°-Quadrate sind entfernt. **Sensorumfelder** folgen jetzt einzelnen Beobachtungen: vorhandene FIRMS-Scan-/Track-Maße bestimmen den umschreibenden Kreis, andernfalls wird ein beschrifteter nominaler Sensormaßstab verwendet. Das ist eine ungefähre Pixelumgebung bei unbekannter Scan-Ausrichtung, keine Brandgrenze und keine Hektarmessung. Industriekontext erhält keinen solchen Flächenumriss. Tatsächliche Brandflächen entstehen weiterhin nur aus geprüfter georeferenzierter Kartierung.
+
 Flächen werden in EPSG:3035 berechnet. Verbrannte Fläche, Umrissfläche einschließlich unversehrter Inseln und aktive Fläche werden unterschiedlich bezeichnet. Wachstum ist eine Änderung kartierter Flächen; Windpfeile zeigen Luftbewegung. Fehlende/abweichende Abdeckung, unpassende Daten oder deutliche Flächenkontraktion unterdrücken die Bewegungsbestimmung.
 
 ## Zugangsdaten und Veröffentlichung
