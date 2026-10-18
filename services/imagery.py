@@ -34,11 +34,17 @@ def download_scene(bbox, acquired_at, destination):
     if width * height > 4_000_000:
         raise ValueError("Area exceeds 4 million 20 m pixels; choose a smaller incident region")
     auth = httpx.post("https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token", data={"grant_type":"client_credentials", "client_id":client, "client_secret":secret}, timeout=30)
+    if auth.status_code in (401,403):
+        raise ValueError(f"Copernicus authentication rejected (HTTP {auth.status_code}); check Sentinel Hub OAuth client credentials")
     auth.raise_for_status()
     script = '//VERSION=3\nfunction setup(){return {input:["B08","B12","SCL","dataMask"],output:{bands:4,sampleType:"FLOAT32"}}} function evaluatePixel(s){return [s.B08,s.B12,s.SCL,s.dataMask]}'
-    body = {"input":{"bounds":{"bbox":bbox},"data":[{"type":"sentinel-2-l2a","dataFilter":{"timeRange":{"from":instant.isoformat(),"to":(instant+timedelta(seconds=1)).isoformat()},"mosaickingOrder":"mostRecent"}}]},"output":{"width":width,"height":height,"responses":[{"identifier":"default","format":{"type":"image/tiff"}}]},"evalscript":script}
+    # STAC product start and Process tile acquisition can differ by several minutes.
+    body = {"input":{"bounds":{"bbox":bbox},"data":[{"type":"sentinel-2-l2a","dataFilter":{"timeRange":{"from":(instant-timedelta(minutes=15)).isoformat(),"to":(instant+timedelta(minutes=15)).isoformat()},"mosaickingOrder":"mostRecent"}}]},"output":{"width":width,"height":height,"responses":[{"identifier":"default","format":{"type":"image/tiff"}}]},"evalscript":script}
     r = httpx.post(CDSE+"/process/v1", headers={"Authorization":"Bearer "+auth.json()["access_token"]}, json=body, timeout=120)
     r.raise_for_status()
+    with rasterio.io.MemoryFile(r.content) as memory, memory.open() as raster:
+        if not raster.crs or raster.count!=4 or not (raster.read(4)>.5).any():
+            raise ValueError("Copernicus returned no observed coverage for this area/time; select another scene")
     Path(destination).write_bytes(r.content)
     return str(destination)
 

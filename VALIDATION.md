@@ -36,60 +36,49 @@ This is an implemented field-pilot platform, with significant detection and fiel
 
 ## Passed locally
 
-- 25 Python regression tests (including preservation of local detail in large camera frames): CSV/schema validation, UTC parsing, provider timeouts without credential disclosure, coordinate and polygon validity, independent area calculation, holes, symmetric growth, missing coverage, contraction, record deduplication, durable publication retry, access/origin/CSRF protection, review/publish/withdraw, upload rejection, interrupted camera recovery and temporal confirmation.
+- 31 Python regression tests (including preservation of local detail in large camera frames): CSV/schema validation, UTC parsing, provider timeouts without credential disclosure, coordinate and polygon validity, independent area calculation, holes, symmetric growth, missing coverage, contraction, record deduplication, durable publication retry, access/origin/CSRF protection, review/publish/withdraw, upload rejection, interrupted camera recovery and temporal confirmation.
 - TypeScript type checking and production Site build.
 - Local D1-backed HTTP checks: missing credentials rejected; collector/operator role separation; browser-origin rejection; invalid coordinates rejected; repeated ingestion deduplicated; approved perimeter visible only with a published incident; withdrawal hides it; private evidence unavailable. Windows Miniflare sometimes restarts after an early rejected POST; the check retries that specific adapter response. Product publication retries transient failures independently.
 - Real model weights downloaded from the official PyroVision v0.2.0 release, verified against SHA256 `e536564ef97d2aed90a7572f08ca752087fc10f7c3544911edca70f473d55fc7`; all model state keys matched the current Holocron implementation.
-- End-to-end isolated MP4 replay: 28 real Getty Fire camera archive frames encoded as a clearly accelerated video and processed; one automatic candidate and one image manually selected as evidence; two explicitly synthetic georeferenced boundaries approved; 15.948 ha added area calculated; publication visibility and withdrawal checked. No fixture incidents were sent to the public site.
+- End-to-end isolated MP4 replay: 28 real Getty Fire camera archive frames encoded as a clearly accelerated video and processed; zero automatic candidates and one image manually selected as evidence (3.89 frames/s with the current detector); two explicitly synthetic georeferenced boundaries approved; 15.948 ha added area calculated; publication visibility and withdrawal checked. No fixture incidents were sent to the public site.
 - Geometry arithmetic: 298.9868847 ha versus 298.9868881 ha from independent WGS84 geodesic calculation, a relative difference of approximately 0.00000115%. This validates the area calculation for that test geometry, not the accuracy of fire delineation.
 - dNBR processing tested on georeferenced four-band synthetic before/after rasters. All-cloud coverage correctly prevents an outline. Drone raster previews retain georeferencing and exclude nodata from their observed footprint.
 
-## Camera detection results: sensitivity improved, false alarms remain unacceptable
+## Camera revision: fewer false alarms, operational acceptance FAILED
 
-The model was evaluated on 28 sampled images from the October 15, 2026 HPWREN FIgLib Henderson Fire / Buffalo Bump South sequence, after the July 2022 weight release. Labels follow the archive's offset from first visible plume: 14 negative and 14 positive frames. Credit: [HPWREN / UCSD](https://www.hpwren.ucsd.edu/FIgLib/).
+ReXNet crop-maximum scores previously promoted many non-fire scenes. The worker now uses a pinned Pyronear YOLO11s ONNX smoke detector with RGB letterboxing, crop-to-frame box transforms and NMS. Five overlapping detections spanning at least four seconds are required for a review item; one item per episode, rearmed after 30 seconds without a positive sample. Scores are uncalibrated. Manual evidence capture remains available. Interrupted recovery, bounded queues and monotonic RTSP time are retained; dropped samples and insufficient throughput are visible.
 
-The initial whole-frame baseline, at score threshold 0.7:
+The frozen [protocol](validation/camera_protocol.json) and [complete results](validation/camera_results.json) include source URLs, SHA256 values, individual scores/boxes, clip durations and alert timestamps. Run `uv run python -m scripts.evaluate_camera --fetch`. Both actual pretrained models were executed on the same inputs; no simulated model outputs were used. The four 2026 HPWREN events postdate the fixed 2025 detector. Getty/Henderson were development only. Stage-one evaluation is preserved in commit b1a02b6; no threshold was adjusted after seeing these holdout scores.
 
-| Metric | Result |
-| --- | --- |
-| True positives | 0 |
-| False negatives | 14 |
-| False positives | 0 |
-| Recall | 0% |
-| Precision | Undefined: no positive predictions |
-| CPU classifier throughput | Approximately 21.3 frames/second on this PC |
-| Full local worker replay | Approximately 18 frames/second |
-| False alerts per hour | Not established; sparse minute-spaced images are not continuous video |
+| 66 archive frames: 34 positive / 32 negative | Previous ReXNet | Current smoke detector |
+| --- | ---: | ---: |
+| True positives / missed positives | 25 / 9 | 15 / 19 |
+| False positives / true negatives | 18 / 14 | 1 / 31 |
+| Precision | 58.14% | 93.75% |
+| Recall | 73.53% | 44.12% |
 
-The initial failure was traced to lost plume detail during whole-frame resizing. The final implementation evaluates the full frame plus nine overlapping half-frame crops, each with the same pretrained normalization and input size, and uses the maximum score. The threshold remains 0.7; no model training was performed. The Henderson sequence was used to diagnose that change and is not a held-out test of the revised algorithm.
+False-positive frames fell by 94.4%, but recall deteriorated materially. Crosley and Sorrento each had **zero detected positive frames**. These sparse minute-cadence images do not establish continuous alarm rates or event latency. Labels follow the archive's visible-plume onset rather than an independently adjudicated German dataset. Credit: [HPWREN / UCSD](https://www.hpwren.ucsd.edu/FIgLib/).
 
-A second, previously unused sequence — September 9, 2026 Getty Fire / Mount Wilson West — provides the final chronological holdout of 14 negative and 14 positive samples:
+Seven actual [FURG videos](https://github.com/steffensbola/furg-fire-dataset), at the pinned source revision and their original frame rate, were decoded and sampled once per video second. Five negative clips total **367.73 seconds (6.13 minutes / 0.10215 camera-hours)**. Source XML confirms no annotated fire in the negative clips. Previous pipeline: three false review alerts, 29.37/hour over this short exposure. Current pipeline: zero observed false alerts; **the one-sided 95% Poisson upper bound is still 29.33/hour**, so no low operational false-alert rate is established. The assumptions behind that interval may not describe correlated real camera scenes.
 
-| Final crop-based metric | Result |
-| --- | --- |
-| True positives / false negatives | 13 / 1 |
-| False positives / true negatives | 14 / 0 |
-| Recall | 92.86% |
-| Precision | 48.15% |
-| CPU classifier throughput | Approximately 3.17 complete frames/second |
-| MP4 worker replay throughput | Approximately 3.64 frames/second |
-| False alerts per hour | Not established on continuous footage |
+Both positive clips (`hand_held_camera_wildfire`, 25.79 s; `hand_held_batteries_night`, 20.52 s) produced **no current automatic alert**, compared with one each previously. A smoke-only model and a fixed-view spatial policy do not support a general handheld or nighttime flame detector. FURG videos predate upstream training; training overlap is unknown and they are not claimed as an upstream-independent model holdout. No German/night/seasonal field precision or recall is established.
 
-These results do **not** establish operational reliability. Cropping improves sensitivity but introduces severe false positives on this sequence. Baseline and holdout summaries are committed in `validation/results.json`; full local scores are under `outputs/`.
+Measured mixed-input CPU inference: previous 8.44 frames/s, current 2.19 frames/s; native large camera frames with ten views achieved only approximately 0.49 frames/s in development. These are local CPU timings, exclude network/decode/operator latency, and do not establish real-time capacity on another PC. No GPU or live RTSP throughput was measured.
 
-Three consecutive positive samples are needed for an automatic review item; human capture is available regardless of the model score. The small sample does not represent German conditions, night scenes, fog, weather extremes, other cameras or continuous alert behavior. GPU acceleration was unavailable in the installed PyTorch runtime; GPU throughput was not measured. Raw JSON results are reproducible under ignored `outputs/` using the scripts documented in README.
+Mighty Mongoose v5.1.0 and Tenacious Tiger v8.3.0 were also explored on a small subset after stage-one results were known. They still missed smoke scenes and were not adopted. Those diagnostics are development comparisons, not fresh holdouts. No claims of improved responder readiness are made from them.
 
-## Hosted verification
+**Decision:** retain explicit experimental status and operator review. The camera acceptance gate is failed. The reduction in false alarms does not compensate for missed fires and does not make this an emergency warning system.
 
-- Public Site deployment succeeded at [Ignis](https://ignis-fire-monitoring.davidkhaliqi05.chatgpt.site).
-- Live collection/publication of five DWD ICON / Open-Meteo model points succeeded. All four FIRMS sources report `configuration_missing`, as requested. No synthetic fire events are published.
-- Anonymous public reads work. Unauthenticated cloud writes return 401; `/operator` is absent from the hosted Site.
-- Public browser review showed the map, unconfigured satellite state, live weather values and source-health details without JavaScript errors.
-- [GitHub CI](https://github.com/kletterrn/Ignis/actions/runs/39164781109) passed for the implementation. [Cloud collector run 39164873501](https://github.com/kletterrn/Ignis/actions/runs/39164873501) completed successfully on GitHub and updated the public weather data at 20:47 UTC; the schedule targets minutes 7, 22, 37 and 52. This verifies the cloud execution path independently of local processing; the PC was not physically powered off during the test. Scheduled timing remains best effort. OpenCV sensor and camera-worker checks run in CI; the PyTorch-specific classifier-detail check runs locally and is skipped by the lightweight CI runtime.
+## Hosted and provider verification
 
-## Intentionally unconfigured or still unverified
+- Public dashboard deployed on [GitHub Pages](https://kletterrn.github.io/Ignis/), deployment [39167980302](https://github.com/kletterrn/Ignis/actions/runs/39167980302). Relative assets and read-only API configuration are generated by `scripts.prepare_site --github-pages` and published by `pages.yml`. Previous Sites frontend redirects to this address. Dynamic D1/R2/API hosting remains on Sites; GitHub Pages cannot execute that backend.
+- Exact-origin CORS permits public GET requests from `https://kletterrn.github.io`; an unrelated origin receives no allow-origin header. Unauthenticated cloud ingestion returns 401; operator routes remain unavailable publicly. Source archives contain no local credentials or raw footage.
+- Updated NASA credentials stored locally and in the existing GitHub Actions secret. [Collector run 39168233135](https://github.com/kletterrn/Ignis/actions/runs/39168233135) succeeded: all four FIRMS sources and five weather points connected. Browser showed 93 filtered 24-hour thermal observations, live weather and 4/4 healthy feeds at the verification time. These are unconfirmed thermal observations, including possible non-wildfire heat sources.
+- Corrected Copernicus OAuth returned 200. Public STAC search found real Sentinel-2 scenes; authenticated Process returned a 36 × 56 pixel, four-band, georeferenced raster over [13.95,50.85,13.96,50.86], with 100% observed coverage and SCL classes 3/4/5. Product `S2A_MSIL2A_20261016T101041_N0513_R022_T33UVS_20261016T170806`; STAC product start 10:10:41.024 UTC, Process catalog tile time 10:16:48.138 UTC. The former one-second time filter returned an empty TIFF with HTTP 200. Selection now spans ±15 minutes around product start, preserves scene/time-basis provenance, and rejects missing coverage before replacing evidence. Authentication failures are actionable and redacted. Cloud/shadow masking still applies during change mapping.
+- The cloud collection path ran on GitHub independently of local processing. The PC was not physically shut down during the check. Scheduled timing remains best effort.
 
-- NASA FIRMS access and Copernicus download credentials remain empty at the user's request. STAC discovery and imported-raster processing are implemented. Successful authenticated Copernicus download and live satellite ingestion remain unverified.
+## Still unverified
+
 - The old public NASA/CARTO values were removed from the local configuration and the tracked `.env` was deleted. Provider-side revocation was not performed; historical Git commits still contain the former file.
 - No physical camera, RTSP endpoint, thermal sensor or drone was available. Real hardware reconnection, device timestamps, calibration, field georeferencing and thermal interpretation remain unverified.
 - Real Sentinel segmentation has not been compared against dated Copernicus ground references. The comparison tool reports overlap, area error and Hausdorff distance when matching candidate/reference polygons are supplied. No real-world perimeter accuracy figure is claimed.

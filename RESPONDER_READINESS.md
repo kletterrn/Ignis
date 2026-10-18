@@ -29,8 +29,8 @@ have different dates and resolutions. DEM relief is not survey-grade evidence.
 
 | Gate | Evidence now | Required before operational reliance |
 | --- | --- | --- |
-| Live detection feeds | Weather cloud collection works; NASA and Copernicus credentials intentionally absent | Fresh provider credentials, authenticated live ingestion/download, outage/recovery exercise and documented coverage/revisit gaps |
-| Camera reliability | Final small holdout: 13 TP, 1 FN, 14 FP, 0 TN; severe false alarms | Independent German day/night/season/negative footage, calibrated operating threshold, recall/precision and continuous false alerts per camera-hour agreed with the agency |
+| Live detection feeds | All four NASA feeds + weather collected on GitHub; corrected Copernicus OAuth and real raster download verified | Outage/recovery exercise and documented coverage/revisit gaps |
+| Camera reliability | Four-event holdout: 15 TP, 19 FN, 1 FP, 31 TN; 0/2 positive videos alerted. Acceptance FAILED. See VALIDATION.md | Independent German day/night/season/negative footage, calibrated operating threshold, recall/precision and continuous false alerts per camera-hour agreed with the agency |
 | Physical hardware | Recorded replay and restart tests work | Real RTSP loss/reconnect, timestamp drift, device calibration, power/network interruption, sustained throughput and evidence provenance |
 | Perimeter quality | Geometry arithmetic and synthetic dNBR checks pass | Dated real Sentinel/drone comparisons against independent reference products; report IoU and delineation error separately from area arithmetic |
 | Movement interpretation | Compatible boundary differencing, missing-coverage and symmetric-growth guards | Field verification of observed growth and sampling limits; preserve uncertainty and avoid inferring the fire front from wind |

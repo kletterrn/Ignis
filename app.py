@@ -267,14 +267,14 @@ def imagery_api(action):
     if action=="download":
         key=uuid4().hex;root=Path(app.config["DATA_DIR"])/"uploads"/key;root.mkdir(parents=True)
         path=download_scene(data["bbox"],data["acquired_at"],root/"scene.tif")
-        store.put("uploads",{"id":key,"paths":[path],"acquired_at":data["acquired_at"],"created_at":utcnow()})
+        store.put("uploads",{"id":key,"paths":[path],"acquired_at":data["acquired_at"],"scene_id":str(data.get("scene_id",""))[:200],"time_basis":"STAC product start; Process selection window ±15 minutes", "created_at":utcnow()})
         return jsonify(id=key)
     if action=="outline":
         pre,post=store.get("uploads",data["before"]),store.get("uploads",data["after"])
         if not pre or not post: raise ValueError("Choose before and after raster uploads")
         result=burned_outline(pre["paths"][0],post["paths"][0],float(data.get("threshold",.2)))
         result["acquired_at"]=post.get("acquired_at")
-        result["provenance"]=f"Before upload {pre['id']}; after upload {post['id']}"
+        result["provenance"]=f"Before {pre.get('scene_id') or pre['id']}; after {post.get('scene_id') or post['id']}; {post.get('time_basis','uploaded acquisition time')}"
         return jsonify(result)
     raise ValueError("Unsupported action")
 

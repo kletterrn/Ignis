@@ -1,6 +1,6 @@
 # Ignis · Feuerbeobachtung
 
-[Öffentliche Plattform](https://ignis-fire-monitoring.davidkhaliqi05.chatgpt.site) · [Cloud-Collector](https://github.com/kletterrn/Ignis/actions/workflows/collect.yml)
+[Öffentliche Plattform auf GitHub Pages](https://kletterrn.github.io/Ignis/) · [Cloud-Collector](https://github.com/kletterrn/Ignis/actions/workflows/collect.yml)
 
 Deutschlandweiter, nichtkommerzieller Feldpilot: Satelliten-Wärmehinweise, modelliertes Wetter, lokale Kameraauswertung und geprüfte Brandflächen mit zeitlichem Vergleich. Der vollständige Python- und Webapp-Quellcode ist unter [Apache-2.0](LICENSE) offen verfügbar; siehe [Mitwirken](CONTRIBUTING.md) und [Drittanbieterhinweise](THIRD_PARTY_NOTICES.md).
 
@@ -48,19 +48,22 @@ Flächen werden in EPSG:3035 berechnet. Verbrannte Fläche, Umrissfläche einsch
 - GitHub Actions: Repository-Variable `IGNIS_SITE_URL` und Secret `IGNIS_COLLECTOR_TOKEN`; optional Secret `FIRMS_MAP_KEY`. Der Collector läuft auf dem Default-Branch alle 15 Minuten und zusätzlich manuell. Ohne FIRMS-Schlüssel bleibt NASA ausdrücklich unkonfiguriert; Wetter wird weiterhin gesammelt.
 - Sites: separate geheime `IGNIS_COLLECTOR_TOKEN` / `IGNIS_OPERATOR_TOKEN`, D1 `DB`, R2 `BUCKET`. Der öffentliche Dienst nimmt keine Operator-Browseraktionen an.
 
-Das Frontend und seine Daten-API liegen in `site/`; Flask und Python verarbeiten lokale Daten. Gemeinsame Darstellung vor jedem Site-Build mit `uv run python -m scripts.prepare_site` aktualisieren. Unter `site/`: `npm ci`, `npm run db:generate` nur bei Schemaänderungen, `npm run build`. Migrationen liegen unter `site/drizzle/` und werden bei Sites-Veröffentlichung angewendet. Lokale Worker-Tests benötigen `site/.dev.vars` neben der gebauten Wrangler-Konfiguration: `Copy-Item .dev.vars dist/server/.dev.vars`. Diese Testdatei vor dem Packaging entfernen. Die Produktivveröffentlichung verwendet ausschließlich native Sites-Secrets.
+Die öffentliche Webapp wird durch `.github/workflows/pages.yml` auf **GitHub Pages** veröffentlicht. `uv run python -m scripts.prepare_site --github-pages` erzeugt die statischen Dateien. GitHub Pages führt keinen Python-Server und keine D1/R2-API aus: Diese Daten-API bleibt separat auf Sites; das alte Frontend leitet auf GitHub weiter. CORS erlaubt öffentliche GET-Abrufe von `https://kletterrn.github.io`, Schreibzugriffe bleiben authentifiziert und browserseitig gesperrt. Flask und Python verarbeiten lokale Daten. Gemeinsame Darstellung vor jedem Site-Build mit `uv run python -m scripts.prepare_site` aktualisieren. Unter `site/`: `npm ci`, `npm run db:generate` nur bei Schemaänderungen, `npm run build`. Migrationen liegen unter `site/drizzle/` und werden bei Sites-Veröffentlichung angewendet. Lokale Worker-Tests benötigen `site/.dev.vars` neben der gebauten Wrangler-Konfiguration: `Copy-Item .dev.vars dist/server/.dev.vars`. Diese Testdatei vor dem Packaging entfernen. Die Produktivveröffentlichung verwendet ausschließlich native Sites-Secrets.
 
 Keine kostenpflichtigen Dienste oder Abonnements werden automatisch aktiviert. GitHub-Zeitpläne können sich verzögern und nach 60 Tagen Repository-Inaktivität deaktiviert werden. Der öffentliche Feedstatus zeigt den letzten Erfolg; nach 45 Minuten wird er als veraltet markiert. Rohbeobachtungen werden nach 90 Tagen gelöscht, geprüfte Ereignisse bleiben erhalten. Lokale Rohdateien werden nur bewusst vom Operator gelöscht; vorher Backup erstellen.
 
 ## Validierung und Grenzen
 
-Siehe [VALIDATION.md](VALIDATION.md) für gemessene Ergebnisse und noch offene Feldprüfungen. Die ursprüngliche Ganzbildauswertung verpasste alle 14 Rauch-Stichproben. Überlappende Ausschnitte erkannten in einer zweiten unabhängigen Sequenz 13 von 14 Rauchbildern, markierten jedoch auch alle 14 Negativbilder. Der Klassifikator bleibt wegen dieser Fehlalarme experimentell und benötigt Operatorprüfung. Kein Alarm ist keine Entwarnung.
+Siehe [VALIDATION.md](VALIDATION.md) für Ergebnisse. Der lokale Worker verwendet jetzt einen per SHA256 fixierten Pyronear-YOLO11s-Rauchdetektor mit Bildausschnitten und räumlicher Bestätigung über fünf Samples / mindestens vier Sekunden. Ein Hinweis pro Episode; Wiederbereitschaft nach 30 Sekunden ohne positiven Befund. Das frühere ReXNet bleibt nur für Vergleichsmessungen erhalten. **Die Abnahme ist nicht bestanden:** Auf 66 unabhängigen Archivbildern sanken Fehlpositive von 18 auf 1, gleichzeitig sank die Raucherkennung von 25/34 auf 15/34. Beide positiven Videoclips blieben ohne automatischen Hinweis. Rohscores sind keine Wahrscheinlichkeiten; manuelle Prüfung und Belegsicherung sind erforderlich. Kein Alarm ist keine Entwarnung. Große Bilder erreichen auf dieser CPU nur ungefähr 0,49 Bilder/s; Jobstatus zeigt Durchsatz und verworfene RTSP-Samples.
 
 ```powershell
+uv run python -m scripts.evaluate_camera --fetch # vier Ereignisse + sieben echte Videos, beide Modelle
 uv run python -m scripts.fetch_validation
 uv run python -m scripts.benchmark data/validation/manifest.csv
 uv run python -m scripts.replay
 uv run python -m scripts.validate_perimeter kandidat.geojson referenz.geojson
 ```
 
-HPWREN-FIgLib-Aufnahmen werden nur lokal zur Validierung heruntergeladen: © HPWREN / UCSD, https://www.hpwren.ucsd.edu/. Die Referenzsequenzen vom September und Oktober 2026 liegen nach der Veröffentlichung der verwendeten Modellgewichte im Juli 2022. Das ist ein kleiner zeitlich unabhängiger Test einer Kamera, keine repräsentative deutsche Feldvalidierung. PyroVision und Holocron: Apache-2.0; Modellquelle und Prüfsumme stehen in `services/camera.py`. Wetter: DWD / Open-Meteo, CC BY 4.0. Karten: OpenStreetMap, Esri und deren Datenanbieter; Attribution bleibt sichtbar. Sentinel-Daten: Copernicus Sentinel.
+HPWREN-FIgLib-Aufnahmen: © HPWREN / UCSD; FURG Fire Dataset: Steffens et al., CC0. Rohbilder, Videos und Modelle bleiben lokal und werden nicht veröffentlicht. Vier HPWREN-Ereignisse von 2026 liegen nach den fixierten YOLO-Gewichten von 2025; Trainingsüberschneidung der älteren FURG-Videos ist unbekannt. Protokoll, Quell-URLs, Dateiprüfsummen und Ergebnisse stehen unter `validation/`. Drittanbieter-Lizenzen einschließlich widersprüchlicher Modell-Lizenzangaben sind in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) dokumentiert.
+
+Am 18.10.2026 wurden NASA (alle vier Quellen in GitHub Actions) und Copernicus OAuth + echter Vierband-Download erfolgreich geprüft. Zugangsdaten liegen ausschließlich in lokaler `.env` bzw. GitHub Secrets. Für Neuinstallationen müssen eigene Schlüssel gesetzt werden. Sentinel-Abfragen berücksichtigen ±15 Minuten um den STAC-Produktstart, da Kachelzeitpunkte abweichen; Zeitbasis und Szenen-ID bleiben beim Upload erhalten. Leere Abdeckung wird abgelehnt.
