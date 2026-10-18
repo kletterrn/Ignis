@@ -5,7 +5,7 @@ const apiUrl = path => (config.apiBase||'')+path;
 let observations = [], visible = [], hours = 24, feedStatus = 'loading', feedMessage = '', map, popup, requestId = 0;
 const number = new Intl.NumberFormat('de-DE', {maximumFractionDigits: 1});
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const {confidence, buildHotZones} = window.IgnisZones;
+const {confidence, industrial, buildHotZones} = window.IgnisZones;
 const {composeStyle, germanStyle, imageryStyle, createStyleSwitcher} = window.IgnisMaps;
 const {assessObservations} = window.IgnisVerification;
 const basemapCache = new Map();
@@ -14,7 +14,7 @@ let terrainEnabled = false;
 let hotZones = buildHotZones([]);
 const selectedSources = new Set([config.source in config.sources ? config.source : Object.keys(config.sources)[0]]);
 function collection() {
-  return {type:'FeatureCollection',features:visible.map(o => ({type:'Feature',geometry:{type:'Point',coordinates:[o.longitude,o.latitude]},properties:{...o,level:confidence(o.confidence)}}))};
+  return {type:'FeatureCollection',features:visible.map(o => ({type:'Feature',geometry:{type:'Point',coordinates:[o.longitude,o.latitude]},properties:{...o,level:confidence(o.confidence),industrial:industrial(o)}}))};
 }
 function resetView() {
   if (!map) return;
@@ -74,9 +74,6 @@ function initMap() {
   try {
     const empty={version:8,glyphs:'https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',sources:{},layers:[{id:'background',type:'background',paint:{'background-color':'#14241f'}}]};
     map = new maplibregl.Map({container:'map',style:composeStyle(empty,collection(),hotZones,true,true),transformRequest:cartoRequest,center:config.view.center||[10.45,51.15],zoom:config.view.zoom||5,attributionControl:true});
-    const fireCanvas=document.createElement('canvas');fireCanvas.width=64;fireCanvas.height=64;
-    const fireContext=fireCanvas.getContext('2d');fireContext.font='52px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';fireContext.textAlign='center';fireContext.textBaseline='middle';fireContext.fillText('\u{1F525}',32,34);
-    map.on('styleimagemissing',event=>{if(event.id==='fire-emoji'&&!map.hasImage(event.id))map.addImage(event.id,fireContext.getImageData(0,0,64,64));});
     map.addControl(new maplibregl.NavigationControl({showCompass:true,visualizePitch:true}), 'top-right');
     map.addControl(new maplibregl.FullscreenControl(), 'top-right');
     map.addControl(new maplibregl.ScaleControl({unit:'metric'}),'bottom-right');
@@ -99,11 +96,11 @@ function initMap() {
         const pointLayers=['hotspots','high-fire','clusters'].filter(id=>map.getLayer(id));
         if(pointLayers.length && map.queryRenderedFeatures(event.point,{layers:pointLayers}).length) return;
         const zone=event.features[0].properties, content=element('div','popup-content');
-        content.append(element('div','popup-title','Bereich mit mehreren Wärmehinweisen'));
-        content.append(element('div','',`${zone.count} Wärmehinweise (mittel/hoch) · ${hours} Std.`));
+        content.append(element('div','popup-title','Ungefähres Sensorumfeld'));
+        content.append(element('div','',`Radius ca. ${zone.radius_m} m · ${zone.method}`));
         content.append(element('div','',`Satelliten: ${zone.satellites}`));
         content.append(element('div','',`Neuester Hinweis: ${zone.latest}`));
-        content.append(element('div','', 'Rasterzelle (0,05°) – keine bestätigte Brandfläche.'));
+        content.append(element('div','', 'Aus Satellitenpixeln abgeleiteter Kontext. Keine Brandgrenze, keine Hektarangabe; Scan-Ausrichtung unbekannt.'));
         popup?.remove();popup=new maplibregl.Popup({maxWidth:'320px'}).setLngLat(event.lngLat).setDOMContent(content).addTo(map);
       });
       for(const layer of ['hotspots','high-fire']) map.on('click',layer,event => selectObservation(event.features[0].properties));
@@ -134,24 +131,25 @@ function selectObservation(o) {
   map.flyTo({center:coordinates,zoom:Math.max(map.getZoom(),10),duration:reducedMotion?0:900});
   popup?.remove();
   const content=element('div','popup-content');
-  content.append(element('div','popup-title','Wärmehinweis'));
+  content.append(element('div','popup-title',industrial(o)?'Wärmehinweis im Industrie-/statischen Kontext':'Wärmehinweis · ungeprüft'));
+  content.append(element('p','',o.context_kind==='unknown'?'Industriekontext unbekannt; fehlende Registereinträge schließen Industrie nicht aus.':industrial(o)?`${o.context_name||'Statische Quelle'} · ${o.context_source||''} · Abstand ${o.context_distance_m??'?'} m. Standortkontext, keine Entwarnung: Auch Industrieanlagen können brennen.`:'Industriekontext noch nicht abgefragt.'));
   for (const [label,value] of [['Ort',`${coordinates[1].toFixed(3)}, ${coordinates[0].toFixed(3)}`],['Datenquelle',o.dataset||o.source],['Satellit',o.satellite],['Sensor',o.sensor],['Erkannt',o.detected_at],['Einstufung',confidenceLabel(confidence(o.confidence))],['Wärmeleistung',`${o.frp} MW`],['Tag / Nacht',o.daynight==='D'?'Tag':o.daynight==='N'?'Nacht':o.daynight]]) {
     const row=element('div','popup-row');row.append(element('span','',label),element('b','',String(value)));content.append(row);
   }
   const evidence=element('div','verification-evidence');
-  evidence.append(element('strong','',verificationLabel(o.verification)),element('p','',o.verification_detail||'Kein zusätzlicher Abgleich verfügbar.'),element('p','','Kein bestätigter Waldbrand. Prüfe offizielle Meldungen. Das Satellitenbild ist kein Livebild.'));
+  evidence.append(element('strong','',industrial(o)?'Industriekontext · keine Brandbestätigung':verificationLabel(o.verification)),element('p','',o.verification_detail||'Kein zusätzlicher Abgleich verfügbar.'),element('p','','Kein bestätigter Waldbrand. Prüfe offizielle Meldungen. Das Satellitenbild ist kein Livebild.'));
   content.append(evidence);
   popup=new maplibregl.Popup({offset:12,maxWidth:'320px'}).setLngLat(coordinates).setDOMContent(content).addTo(map);
 }
 function render() {
   popup?.remove();
   const query=$('search').value.trim().toLowerCase(), level=$('confidence').value;
-  visible=observations.filter(o=>(level==='all'||confidence(o.confidence)===level)&&`${o.satellite} ${o.sensor} ${o.latitude} ${o.longitude}`.toLowerCase().includes(query));
+  visible=observations.filter(o=>($('show-industry').checked||!industrial(o))&&(level==='all'||confidence(o.confidence)===level)&&`${o.satellite} ${o.sensor} ${o.latitude} ${o.longitude} ${o.context_name||''}`.toLowerCase().includes(query));
   const connected=feedStatus==='connected'||feedStatus==='partial';
   hotZones=buildHotZones(visible);
   const supported=visible.filter(o=>o.verification==='Cross-satellite support').length;
-  $('verification-summary').textContent=connected?`${supported} Hinweise mit Übereinstimmung mehrerer Satelliten · ${visible.length-supported} ohne solchen Abgleich. Keine unabhängige Brandbestätigung · ${hours} Std.${feedStatus==='partial'?' · einige Quellen nicht verfügbar':''}.`:'Abgleich verfügbar, sobald Satellitendaten geladen sind.';
-  $('zone-count').textContent=connected?`${hotZones.features.length} verdichtete Bereiche`:'Keine Bereichsdaten verfügbar';
+  $('verification-summary').textContent=connected?`${supported} Hinweise mit Übereinstimmung mehrerer Satelliten · ${visible.length-supported} ohne solchen Abgleich. ${observations.filter(industrial).length} Hinweise im Industrie-/statischen Kontext (grau). Keine unabhängige Brandbestätigung · ${hours} Std.${feedStatus==='partial'?' · einige Quellen nicht verfügbar':''}.`:'Abgleich verfügbar, sobald Satellitendaten geladen sind.';
+  $('zone-count').textContent=connected?`${hotZones.features.length} Sensorumfelder`:'Keine Bereichsdaten verfügbar';
   map?.getSource('hot-zones')?.setData(hotZones);
   $('total').textContent=connected?number.format(visible.length):'—';
   $('high').textContent=connected?number.format(visible.filter(o=>confidence(o.confidence)==='high').length):'—';
@@ -173,7 +171,7 @@ function render() {
     const top=element('div','detection-top'),bottom=element('div','detection-bottom');
     top.append(element('span','',`${o.latitude.toFixed(3)}°, ${o.longitude.toFixed(3)}°`),element('span','confidence-pill',confidenceLabel(confidence(o.confidence))));
     bottom.append(element('span','',`${o.satellite} · ${number.format(o.frp)} MW`),element('span','',o.detected_at.slice(5)));
-    button.append(top,bottom,element('div','verification-badge',verificationLabel(o.verification)));button.addEventListener('click',()=>{selectObservation(o);document.querySelectorAll('.detection.selected').forEach(node=>node.classList.remove('selected'));button.classList.add('selected');});list.append(button);
+    button.append(top,bottom,element('div','verification-badge',industrial(o)?'Industriekontext · keine Brandbestätigung':verificationLabel(o.verification)));button.addEventListener('click',()=>{selectObservation(o);document.querySelectorAll('.detection.selected').forEach(node=>node.classList.remove('selected'));button.classList.add('selected');});list.append(button);
   }
   map?.getSource('detections')?.setData(collection());
 }
@@ -212,12 +210,13 @@ for(const button of document.querySelectorAll('[data-hours]')) button.addEventLi
   refresh();
 });
 $('confidence').addEventListener('change',render);$('search').addEventListener('input',render);
+$('show-industry').addEventListener('change',render);
 $('show-zones').addEventListener('change',setZones);
 $('show-hotspots').addEventListener('change',setHotspots);$('fit-map').addEventListener('click',resetView);
 $('basemap').addEventListener('change',()=>changeBasemap($('basemap').value));
 $('map-dimension').addEventListener('change',changeDimension);
 $('export').addEventListener('click',()=>{
-  const columns=['latitude','longitude','detected_at','satellite','sensor','confidence','frp','daynight','source','dataset','verification','verification_detail'];
+  const columns=['latitude','longitude','detected_at','satellite','sensor','confidence','frp','daynight','source','dataset','verification','verification_detail','scan_km','track_km','context_kind','context_name','context_source','context_checked_at','context_distance_m'];
   const cell=value=>'"'+String(value).replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"';
   const csv=[columns.join(','),...visible.map(o=>columns.map(key=>cell(o[key])).join(','))].join('\r\n');
   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));const link=document.createElement('a');link.href=url;link.download=`ignis-observations-${hours}h.csv`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);

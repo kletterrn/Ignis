@@ -29,7 +29,14 @@ def parse_firms_csv(csv_text):
             if not all(math.isfinite(x) for x in (lat, lon, frp)) or not (-90 <= lat <= 90 and -180 <= lon <= 180) or frp < 0:
                 raise ValueError()
             detected = datetime.strptime(f"{row['acq_date']} {row['acq_time'].zfill(4)}", "%Y-%m-%d %H%M").replace(tzinfo=timezone.utc)
-            observations.append(Observation(lat, lon, detected, "NASA_FIRMS", row["satellite"], row["instrument"], row["confidence"], frp, row["daynight"]))
+            dimensions=[]
+            for name in ('scan','track'):
+                value=float(row[name]) if row.get(name) else None
+                if value is not None and (not math.isfinite(value) or not 0<value<=10):raise ValueError()
+                dimensions.append(value)
+            thermal_type=int(row['type']) if row.get('type') else None
+            if thermal_type is not None and thermal_type not in (0,1,2,3):raise ValueError()
+            observations.append(Observation(lat, lon, detected, "NASA_FIRMS", row["satellite"], row["instrument"], row["confidence"], frp, row["daynight"],*dimensions,thermal_type))
         except (ValueError, TypeError, KeyError, AttributeError):
             invalid += 1
     # Partial malformed responses must not masquerade as complete coverage.

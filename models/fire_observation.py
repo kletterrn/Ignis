@@ -13,3 +13,6 @@ class Observation:
     confidence: str
     frp: float
     daynight: str
+    scan_km: float | None = None
+    track_km: float | None = None
+    thermal_type: int | None = None

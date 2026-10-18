@@ -58,11 +58,11 @@
           <label class="map-select-label" for="basemap"><span class="control-label">Kartenansicht</span><select id="basemap"><option value="streets" selected>Standardkarte</option><option value="dark">Dunkle Karte</option><option value="imagery">Satellitenbild</option></select></label>
           <label class="map-select-label" for="map-dimension"><span class="control-label">Darstellung</span><select id="map-dimension" aria-describedby="terrain-note"><option value="2d">2D-Karte</option><option value="3d">3D-Gelände</option></select></label>
         </div>
-        <div class="layer-row"><label class="layer-toggle"><input type="checkbox" id="show-hotspots" checked> Wärmehinweise</label><label class="layer-toggle"><input type="checkbox" id="show-zones" checked> Verdichtete Bereiche</label></div>
+        <div class="layer-row"><label class="layer-toggle"><input type="checkbox" id="show-hotspots" checked> Wärmehinweise</label><label class="layer-toggle"><input type="checkbox" id="show-zones" checked> Sensorumfelder</label><label class="layer-toggle"><input type="checkbox" id="show-industry" checked> Industriekontext (grau)</label></div>
         <p id="basemap-note" class="basemap-note" role="status">Kartendaten werden geladen …</p>
         <p id="terrain-note" class="basemap-note" role="status">2D-Ansicht · Flächenangaben werden unabhängig von der Ansicht berechnet.</p>
-        <div class="map-wrap"><div id="map" aria-label="Interaktive Karte mit Wärmehinweisen"></div><div id="map-error" class="map-message" role="alert" hidden></div><div class="map-legend"><span><i class="legend-dot high"></i> Hoch</span><span><i class="legend-dot nominal"></i> Mittel</span><span><i class="legend-dot low"></i> Niedrig / unbekannt</span><span><i class="zone-key"></i> Verdichteter Bereich</span></div></div>
-        <div class="map-footer"><span id="mapped-count">0 Hinweise auf der Karte</span><strong id="zone-count">0 verdichtete Bereiche</strong></div><p id="verification-summary" class="basemap-note" aria-live="polite"></p>
+        <div class="map-wrap"><div id="map" aria-label="Interaktive Karte mit Wärmehinweisen"></div><div id="map-error" class="map-message" role="alert" hidden></div><div class="map-legend"><span><i class="legend-dot high"></i> Hoch</span><span><i class="legend-dot nominal"></i> Mittel</span><span><i class="legend-dot low"></i> Niedrig / unbekannt</span><span><i class="zone-key"></i> Sensorumfeld · keine Brandgrenze</span></div></div>
+        <div class="map-footer"><span id="mapped-count">0 Hinweise auf der Karte</span><strong id="zone-count">0 Sensorumfelder</strong></div><p id="verification-summary" class="basemap-note" aria-live="polite"></p>
       </article>
 
       <article class="detections-card" id="detections">

@@ -30,4 +30,5 @@ def serialize_observation(observation: Observation) -> dict:
         "confidence": observation.confidence,
         "frp": observation.frp,
         "daynight": observation.daynight,
+        **{key:value for key,value in (("scan_km",observation.scan_km),("track_km",observation.track_km),("thermal_type",observation.thermal_type)) if value is not None},
     }

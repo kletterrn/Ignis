@@ -18,6 +18,11 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r requirements-collector.txt
+      - uses: actions/cache@v4
+        with:
+          path: data/industrial-cache.json
+          key: industrial-context-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: industrial-context-${{ runner.os }}-
       - run: python -m scripts.collect
         env:
           FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 import httpx
 from providers.nasa_firms import AREA, SATELLITE_SOURCES, FIRMSDataError, fetch_observations
 from providers.weather import fetch_weather
+from providers.industrial import annotate_industry
 from services.observations import serialize_observation
 from services.store import utcnow
 
@@ -21,7 +22,6 @@ def collect(store, map_key, area=AREA, extra_points=None):
                 item.update(acquired_at=record.detected_at.isoformat(), retrieved_at=now, dataset=source)
                 identity = [record.satellite, record.sensor, record.latitude, record.longitude, item["acquired_at"]]
                 item["id"] = hashlib.sha256(repr(identity).encode()).hexdigest()[:32]
-                store.put("observations", item)
                 records.append(item)
             status = {"id": source, "label": label, "status": "connected", "count": len(items), "checked_at": now, "last_success_at": now}
         except FIRMSDataError as exc:
@@ -29,6 +29,11 @@ def collect(store, map_key, area=AREA, extra_points=None):
             status = {"id": source, "label": label, "status": "configuration_missing" if exc.safe_reason == "configuration_missing" else "unavailable", "count": 0, "checked_at": now, "last_success_at": previous.get("last_success_at")}
         store.put("sources", status)
         statuses.append(status)
+    context=annotate_industry(records)
+    previous=store.get('sources','industrial_context') or {}
+    context.update(id='industrial_context',label='Industriekontext · UBA PRTR 2024',checked_at=now,last_success_at=now if context['status']=='connected' else previous.get('last_success_at'))
+    statuses.append(context);store.put('sources',context)
+    for item in records:store.put('observations',item)
     for key, (lat, lon) in {**WEATHER_POINTS,**(extra_points or {})}.items():
         try:
             item = fetch_weather(lat, lon, key)
