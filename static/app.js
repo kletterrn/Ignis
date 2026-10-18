@@ -61,11 +61,11 @@ async function changeBasemap(name) {
     $('basemap').value=activeBasemap;mapNotice(error.message);$('basemap-note').textContent='Kartenwechsel fehlgeschlagen. Die bisherigen Daten bleiben erhalten.';
   }
 }
-function changeDimension() {
+async function changeDimension() {
   if(!map) return;
   terrainEnabled=$('map-dimension').value==='3d';
   $('terrain-note').textContent=terrainEnabled?'Geländehöhen werden geladen … Zum Erkennen von Relief näher heranzoomen.':'2D-Ansicht · Flächenangaben werden unabhängig von der Ansicht berechnet.';
-  changeBasemap($('basemap').value);
+  await changeBasemap($('basemap').value);
   map.easeTo({pitch:terrainEnabled?60:0,bearing:terrainEnabled?map.getBearing():0,duration:reducedMotion?0:700});
 }
 function initMap() {
