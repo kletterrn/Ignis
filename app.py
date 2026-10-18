@@ -78,7 +78,7 @@ def observations_api():
     for state in states:
         if state.get("last_success_at") and now-timestamp(state["last_success_at"]) > timedelta(minutes=45): state["status"]="stale"
     good=sum(x["status"]=="connected" for x in states)
-    return jsonify(observations=sorted(records,key=lambda x:x["acquired_at"],reverse=True),sources=states,status="connected" if good==len(states) else "partial" if good else "unavailable",checked_at=max((x.get("checked_at","") for x in states),default="") or None,hours=int(hours),source=",".join(sources),area=AREA,message="Persistierte Beobachtungen · Feedstatus beachten")
+    return jsonify(observations=sorted(records,key=lambda x:x["acquired_at"],reverse=True),sources=states,status="connected" if good==len(states) else "partial" if good else "configuration_missing" if all(x["status"]=="configuration_missing" for x in states) else "unavailable",checked_at=max((x.get("checked_at","") for x in states),default="") or None,hours=int(hours),source=",".join(sources),area=AREA,message="Persistierte Beobachtungen · Feedstatus beachten")
 
 @app.get("/api/v1/<resource>")
 def public_api(resource):
