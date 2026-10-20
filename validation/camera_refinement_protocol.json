@@ -1,0 +1,213 @@
+{
+  "frozen_before_evaluation": "2026-10-18",
+  "smoke_model_sha256": "dcf513579615d7b701fbab2d1633d383684fd5885210fb0a46fae8aae29459aa",
+  "flame_model_sha256": "f2699b753e78be8d392bfa63e64bf102ea3ceb8b6086a59dfd8192b61a0c6fad",
+  "threshold": 0.5,
+  "temporal_policy": "5 of last 8 samples, same class and IoU >=0.1, span >=4s, each gap <=6s; one review item until 30 seconds without a positive sample",
+  "archive_stride": 5,
+  "archive_holdout": [
+    "20260428_LiveOakFire_rm-s-mobo-c",
+    "20260622_BernardoFire_wc-w-mobo-c",
+    "20260722_CreelmanFire_cp-w-mobo-c",
+    "20260820_ChiaFire_hp-n-mobo-c"
+  ],
+  "video_revision": "6aff09d7baa27425f31d1df685284c26cbffe7af",
+  "continuous_video": [
+    {
+      "name": "non_fire_patrolbot_onboard",
+      "fire": false
+    },
+    {
+      "name": "cleaner",
+      "fire": false
+    },
+    {
+      "name": "coolerbot",
+      "fire": false
+    },
+    {
+      "name": "rover",
+      "fire": false
+    },
+    {
+      "name": "icra",
+      "fire": false
+    },
+    {
+      "name": "hand_held_camera_wildfire",
+      "fire": true
+    },
+    {
+      "name": "hand_held_batteries_night",
+      "fire": true
+    },
+    {
+      "name": "Car1",
+      "fire": true
+    },
+    {
+      "name": "barbecue",
+      "fire": true
+    },
+    {
+      "name": "car2",
+      "fire": true,
+      "annotation_name": "Car2.xml"
+    },
+    {
+      "name": "car3",
+      "fire": true,
+      "annotation_name": "Car3.xml"
+    },
+    {
+      "name": "case2_car",
+      "fire": true
+    },
+    {
+      "name": "case2_house",
+      "fire": true
+    },
+    {
+      "name": "case2_outside",
+      "fire": false
+    },
+    {
+      "name": "hand_held_nasa_training",
+      "fire": true
+    },
+    {
+      "name": "hand_held_nasa_training2",
+      "fire": true
+    },
+    {
+      "name": "hand_held_winnebago",
+      "fire": true
+    },
+    {
+      "name": "house1",
+      "fire": true
+    },
+    {
+      "name": "house2",
+      "fire": true
+    },
+    {
+      "name": "house3",
+      "fire": true
+    },
+    {
+      "name": "house4",
+      "fire": true
+    },
+    {
+      "name": "house5",
+      "fire": true
+    },
+    {
+      "name": "house6",
+      "fire": true
+    }
+  ],
+  "firesense": [
+    {
+      "kind": "smoke",
+      "file": "smoke_videos.1407.zip",
+      "sha256": "876035a132f81119504e9fa53634d56215dd84b29c986d373bff4ee638b37eea"
+    },
+    {
+      "kind": "fire",
+      "file": "fire_videos.1406.zip",
+      "sha256": "15bff18ba386d98769bd9d8c992ad6a16af38170eb49c0d8bb7fec8bc0f72982"
+    }
+  ],
+  "inclusion": "All AVI files in both FIRESENSE archives, every MP4 in pinned FURG revision, four preselected additional HPWREN events. No post-evaluation exclusions. Original seven FURG clips are development regressions; remaining 65 clips are new to this implementation.",
+  "limitations": [
+    "Upstream training overlap for FURG/FIRESENSE is unknown; implementation holdout is not guaranteed model-training independence.",
+    "HPWREN archive labels follow plume onset; frames are minute-cadence, not continuous exposure.",
+    "FIRESENSE source labels distinguish positive/negative examples for each task; ambiguous visual cases require independent adjudication.",
+    "No operational acceptance or calibrated probabilities."
+  ],
+  "annotation_note": "Before any new inference: corrected Car2/Car3 XML capitalization and classified case2_outside as negative from its zero source fire annotations.",
+  "flame_threshold": 0.5,
+  "development_video_names": [
+    "non_fire_patrolbot_onboard",
+    "cleaner",
+    "coolerbot",
+    "rover",
+    "icra",
+    "hand_held_camera_wildfire",
+    "hand_held_batteries_night",
+    "Car1",
+    "barbecue",
+    "car2",
+    "car3",
+    "case2_car",
+    "case2_house",
+    "case2_outside",
+    "hand_held_nasa_training",
+    "hand_held_nasa_training2",
+    "hand_held_winnebago",
+    "house1",
+    "house2",
+    "house3",
+    "house4",
+    "house5",
+    "house6",
+    "firesense_smoke_testneg01.807",
+    "firesense_smoke_testneg02.808",
+    "firesense_smoke_testneg03.809",
+    "firesense_smoke_testneg04.810",
+    "firesense_smoke_testneg05.811",
+    "firesense_smoke_testneg06.812",
+    "firesense_smoke_testneg07.813",
+    "firesense_smoke_testneg08.814",
+    "firesense_smoke_testneg09.815",
+    "firesense_smoke_testpos01.817",
+    "firesense_smoke_testpos02.818",
+    "firesense_smoke_testpos03.819"
+  ],
+  "fresh_holdout_video_names": [
+    "firesense_smoke_testpos04.820",
+    "firesense_smoke_testpos05.821",
+    "firesense_smoke_testpos06.822",
+    "firesense_smoke_testpos07.823",
+    "firesense_smoke_testpos08.824",
+    "firesense_smoke_testpos09.825",
+    "firesense_smoke_testpos10.826",
+    "firesense_smoke_testpos11.827",
+    "firesense_smoke_testpos12.828",
+    "firesense_smoke_testpos13.829",
+    "firesense_fire_negsVideo1.858",
+    "firesense_fire_negsVideo2.859",
+    "firesense_fire_negsVideo3.860",
+    "firesense_fire_negsVideo4.861",
+    "firesense_fire_negsVideo5.862",
+    "firesense_fire_negsVideo6.863",
+    "firesense_fire_negsVideo7.864",
+    "firesense_fire_negsVideo8.865",
+    "firesense_fire_negsVideo9.866",
+    "firesense_fire_negsVideo10.1072",
+    "firesense_fire_negsVideo11.1073",
+    "firesense_fire_negsVideo12.1074",
+    "firesense_fire_negsVideo13.1075",
+    "firesense_fire_negsVideo14.1076",
+    "firesense_fire_negsVideo16.1077",
+    "firesense_fire_negsVideo15.1078",
+    "firesense_fire_posVideo1.868",
+    "firesense_fire_posVideo10.869",
+    "firesense_fire_posVideo11.870",
+    "firesense_fire_posVideo2.871",
+    "firesense_fire_posVideo3.872",
+    "firesense_fire_posVideo4.873",
+    "firesense_fire_posVideo5.874",
+    "firesense_fire_posVideo6.875",
+    "firesense_fire_posVideo7.876",
+    "firesense_fire_posVideo8.877",
+    "firesense_fire_posVideo9.878"
+  ],
+  "archive_detection_cache": "validation/camera_refinement_candidate_a.json",
+  "calibration_note": "Candidate A rejected: false flame alert on cardboard. A cutoff-only trial (.57) retained the original clips but delayed wildfire detection. On development ROI crops, ReXNet scores were .24/.30 for cardboard and .98-1.00 for actual fire. Final flame rule: CNN >=.5 AND whole-ROI ReXNet >=.8, context factor1.5; both scores uncalibrated. The same 35 development /37 untouched clips remain declared; all72 files are tested, none excluded.",
+  "verifier_sha256": "e536564ef97d2aed90a7572f08ca752087fc10f7c3544911edca70f473d55fc7",
+  "verifier_threshold": 0.8,
+  "smoke_score_cache": "data/camera-refinement/smoke_score_cache.json"
+}

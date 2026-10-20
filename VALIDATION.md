@@ -1,8 +1,16 @@
-# Ignis pilot validation · 18 October 2026
+# Ignis pilot validation · updated 19 October 2026
 
 This is an implemented field-pilot platform, with significant detection and field-validation limits. It is not an operational wildfire warning system.
 
-## 3D, stereo and thermal increment
+## Current camera and map refinement
+
+See [the complete camera report](validation/CAMERA_REFINEMENT.md): 72 real video files, 35 development /37 reserved; positive clips detected **11/41 →26/41**, five false smoke alerts unchanged over 21.13 decoded negative minutes. Reserved positive clips **5/21 →11/21**, three false alerts unchanged. Faint smoke remains poor (11/33 positive archive frames). This is an improvement in supervised flame review, **not operational acceptance**.
+
+The public dashboard replaces 0.05° density squares with approximate per-observation sensor context from FIRMS scan/track or an explicitly nominal sensor scale. Industrial context is gray, including clusters; no fire icons imply wildfire confirmation. UBA PRTR /EEA 2024 facilities are checked within 1 km, with source IDs and distances retained. Context does not prove the heat source or rule out an actual fire. Raw observations remain visible by default; reviewed incident boundaries are unaffected.
+
+Current checks: 38 Python and five JavaScript checks, TypeScript and production build; actual positive/negative worker replays. [Cloud collection 39170278272](https://github.com/kletterrn/Ignis/actions/runs/39170278272) passed with cached industrial context. The browser verified facility naming, gray markers and the new layer controls on GitHub Pages. Final deployment/CI links are supplied with the delivery.
+
+## Earlier 3D, stereo and thermal increment
 
 - 25 Python checks and two JavaScript map checks pass locally. New checks run real
   OpenCV stereo matching on a deterministic synthetic 4 m plane, reject invalid
@@ -36,17 +44,17 @@ This is an implemented field-pilot platform, with significant detection and fiel
 
 ## Passed locally
 
-- 31 Python regression tests (including preservation of local detail in large camera frames): CSV/schema validation, UTC parsing, provider timeouts without credential disclosure, coordinate and polygon validity, independent area calculation, holes, symmetric growth, missing coverage, contraction, record deduplication, durable publication retry, access/origin/CSRF protection, review/publish/withdraw, upload rejection, interrupted camera recovery and temporal confirmation.
+- 38 Python regression tests (including preservation of local detail in large camera frames): CSV/schema validation, UTC parsing, provider timeouts without credential disclosure, coordinate and polygon validity, independent area calculation, holes, symmetric growth, missing coverage, contraction, record deduplication, durable publication retry, access/origin/CSRF protection, review/publish/withdraw, upload rejection, interrupted camera recovery and temporal confirmation.
 - TypeScript type checking and production Site build.
 - Local D1-backed HTTP checks: missing credentials rejected; collector/operator role separation; browser-origin rejection; invalid coordinates rejected; repeated ingestion deduplicated; approved perimeter visible only with a published incident; withdrawal hides it; private evidence unavailable. Windows Miniflare sometimes restarts after an early rejected POST; the check retries that specific adapter response. Product publication retries transient failures independently.
 - Real model weights downloaded from the official PyroVision v0.2.0 release, verified against SHA256 `e536564ef97d2aed90a7572f08ca752087fc10f7c3544911edca70f473d55fc7`; all model state keys matched the current Holocron implementation.
-- End-to-end isolated MP4 replay: 28 real Getty Fire camera archive frames encoded as a clearly accelerated video and processed; zero automatic candidates and one image manually selected as evidence (3.89 frames/s with the current detector); two explicitly synthetic georeferenced boundaries approved; 15.948 ha added area calculated; publication visibility and withdrawal checked. No fixture incidents were sent to the public site.
+- End-to-end isolated MP4 replay: 28 real Getty Fire camera archive frames encoded as a clearly accelerated video and processed; zero automatic candidates and one image manually selected as evidence (3.89 frames/s in that smoke-only revision); two explicitly synthetic georeferenced boundaries approved; 15.948 ha added area calculated; publication visibility and withdrawal checked. No fixture incidents were sent to the public site.
 - Geometry arithmetic: 298.9868847 ha versus 298.9868881 ha from independent WGS84 geodesic calculation, a relative difference of approximately 0.00000115%. This validates the area calculation for that test geometry, not the accuracy of fire delineation.
 - dNBR processing tested on georeferenced four-band synthetic before/after rasters. All-cloud coverage correctly prevents an outline. Drone raster previews retain georeferencing and exclude nodata from their observed footprint.
 
-## Camera revision: fewer false alarms, operational acceptance FAILED
+## Historical first camera revision (18 October; superseded by report above)
 
-ReXNet crop-maximum scores previously promoted many non-fire scenes. The worker now uses a pinned Pyronear YOLO11s ONNX smoke detector with RGB letterboxing, crop-to-frame box transforms and NMS. Five overlapping detections spanning at least four seconds are required for a review item; one item per episode, rearmed after 30 seconds without a positive sample. Scores are uncalibrated. Manual evidence capture remains available. Interrupted recovery, bounded queues and monotonic RTSP time are retained; dropped samples and insufficient throughput are visible.
+ReXNet crop-maximum scores previously promoted many non-fire scenes. That revision used a pinned Pyronear YOLO11s ONNX smoke detector with RGB letterboxing, crop-to-frame box transforms and NMS. Five overlapping detections spanning at least four seconds are required for a review item; one item per episode, rearmed after 30 seconds without a positive sample. Scores are uncalibrated. Manual evidence capture remains available. Interrupted recovery, bounded queues and monotonic RTSP time are retained; dropped samples and insufficient throughput are visible.
 
 The frozen [protocol](validation/camera_protocol.json) and [complete results](validation/camera_results.json) include source URLs, SHA256 values, individual scores/boxes, clip durations and alert timestamps. Run `uv run python -m scripts.evaluate_camera --fetch`. Both actual pretrained models were executed on the same inputs; no simulated model outputs were used. The four 2026 HPWREN events postdate the fixed 2025 detector. Getty/Henderson were development only. Stage-one evaluation is preserved in commit b1a02b6; no threshold was adjusted after seeing these holdout scores.
 
@@ -61,7 +69,7 @@ False-positive frames fell by 94.4%, but recall deteriorated materially. Crosley
 
 Seven actual [FURG videos](https://github.com/steffensbola/furg-fire-dataset), at the pinned source revision and their original frame rate, were decoded and sampled once per video second. Five negative clips total **367.73 seconds (6.13 minutes / 0.10215 camera-hours)**. Source XML confirms no annotated fire in the negative clips. Previous pipeline: three false review alerts, 29.37/hour over this short exposure. Current pipeline: zero observed false alerts; **the one-sided 95% Poisson upper bound is still 29.33/hour**, so no low operational false-alert rate is established. The assumptions behind that interval may not describe correlated real camera scenes.
 
-Both positive clips (`hand_held_camera_wildfire`, 25.79 s; `hand_held_batteries_night`, 20.52 s) produced **no current automatic alert**, compared with one each previously. A smoke-only model and a fixed-view spatial policy do not support a general handheld or nighttime flame detector. FURG videos predate upstream training; training overlap is unknown and they are not claimed as an upstream-independent model holdout. No German/night/seasonal field precision or recall is established.
+Both positive clips (`hand_held_camera_wildfire`, 25.79 s; `hand_held_batteries_night`, 20.52 s) produced **no automatic alert in that revision**, compared with one each previously. A smoke-only model and a fixed-view spatial policy do not support a general handheld or nighttime flame detector. FURG videos predate upstream training; training overlap is unknown and they are not claimed as an upstream-independent model holdout. No German/night/seasonal field precision or recall is established.
 
 Measured mixed-input CPU inference: previous 8.44 frames/s, current 2.19 frames/s; native large camera frames with ten views achieved only approximately 0.49 frames/s in development. These are local CPU timings, exclude network/decode/operator latency, and do not establish real-time capacity on another PC. No GPU or live RTSP throughput was measured.
 

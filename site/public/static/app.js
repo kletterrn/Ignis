@@ -164,7 +164,7 @@ function render() {
     const empty=element('div','empty-state');
     const title=feedStatus==='loading'?'Verbindung wird hergestellt':feedStatus==='configuration_missing'?'Satellitendaten einrichten':feedStatus==='unavailable'?'Satellitendaten nicht verfügbar':observations.length?'Keine passenden Wärmehinweise':'Keine Hinweise in diesem Zeitraum';
     const message=connected?(observations.length?'Versuche einen anderen Suchbegriff oder Filter.':'Versuche einen längeren Zeitraum. Keine Hinweise bedeuten nicht, dass es keine Brände gibt.'):feedMessage||'Satellitendaten werden abgerufen.';
-    empty.append(element('span','empty-icon','◎'),element('h3','',title),element('p','',message));list.append(empty);
+    empty.append(element('h3','',title),element('p','',message));list.append(empty);
   }
   for (const o of visible.slice(0,200)) {
     const button=element('button','detection');
@@ -217,7 +217,7 @@ $('basemap').addEventListener('change',()=>changeBasemap($('basemap').value));
 $('map-dimension').addEventListener('change',changeDimension);
 $('export').addEventListener('click',()=>{
   const columns=['latitude','longitude','detected_at','satellite','sensor','confidence','frp','daynight','source','dataset','verification','verification_detail','scan_km','track_km','context_kind','context_name','context_source','context_checked_at','context_distance_m'];
-  const cell=value=>'"'+String(value).replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"';
+  const cell=value=>'"'+String(value??'').replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"';
   const csv=[columns.join(','),...visible.map(o=>columns.map(key=>cell(o[key])).join(','))].join('\r\n');
   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));const link=document.createElement('a');link.href=url;link.download=`ignis-observations-${hours}h.csv`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });

@@ -63,6 +63,59 @@ def test_confirmation_tolerates_short_misses_but_never_combines_classes():
         assert gate.update(t,[{**region(),'label':'fire' if t%2 else 'smoke'}]) is None
 
 
+def test_slow_samples_can_confirm_but_a_reconnection_resets_history():
+    pytest.importorskip('cv2')
+    from services.camera import TemporalGate
+    gate=TemporalGate()
+    for t in (0,3,6,9):assert gate.update(t,[region()]) is None
+    assert gate.update(12,[region()])
+    gate=TemporalGate()
+    for t in (0,1,2,20,21,22,23):assert gate.update(t,[region()]) is None
+    assert gate.update(24,[region()])
+
+
+def test_distinct_episodes_in_one_minute_preserve_both_evidence_items(tmp_path):
+    pytest.importorskip('cv2')
+    from services.camera import CameraWorker
+    from services.store import Store
+    root=tmp_path/'sequence';root.mkdir()
+    for i in range(40):Image.new('RGB',(48,32)).save(root/f'{i:03}.jpg')
+    class Detector:
+        name=device='test'
+        count=0
+        def detect(self,image):
+            i=self.count;self.count+=1
+            return [region()] if i<5 or i>=35 else []
+    store=Store(tmp_path/'state.sqlite');worker=CameraWorker(store,tmp_path/'evidence');worker.classifier=Detector()
+    key=worker.start(str(root),'sequence');worker.thread.join(timeout=15)
+    assert store.get('jobs',key)['status']=='completed'
+    assert sorted(e['offset_seconds'] for e in store.all('evidence'))==[4,39]
+
+
+def test_video_decode_mismatch_is_visible_in_worker_health(monkeypatch,tmp_path):
+    cv2=pytest.importorskip('cv2')
+    from services.camera import CameraWorker
+    from services.store import Store
+    class Capture:
+        count=0
+        def open(self,*args):return True
+        def isOpened(self):return True
+        def get(self,key):return 1 if key==cv2.CAP_PROP_FPS else 5
+        def read(self):
+            self.count+=1
+            return (True,np.zeros((32,48,3),dtype='uint8')) if self.count<=2 else (False,None)
+        def release(self):pass
+    class Detector:
+        name=device='test'
+        def detect(self,image):return []
+    monkeypatch.setattr('services.camera.cv2.VideoCapture',Capture)
+    store=Store(tmp_path/'state.sqlite');worker=CameraWorker(store,tmp_path/'evidence');worker.classifier=Detector()
+    key=worker.start('input.avi','video');worker.thread.join(timeout=10)
+    job=store.get('jobs',key)
+    assert job['status']=='completed' and job['frames']==2
+    assert job['declared_frames']==5 and job['decoded_frames']==2 and job['decode_warning']
+
+
 def test_flame_decoder_uses_rgb_and_keeps_classes_separate():
     pytest.importorskip('cv2')
     from services.camera import FlameDetector
@@ -72,5 +125,14 @@ def test_flame_decoder_uses_rgb_and_keeps_classes_separate():
         def run(self,_,feed):
             assert feed['images'].shape==(1,3,320,320)
             return [output]
+    class Verifier:
+        value=.99
+        def score(self,image,*,multi_crop):
+            assert image.size==(120,120) and multi_crop is False
+            return self.value
+    detector.verifier=Verifier()
     detector.net=FakeNet();result=detector.detect(Image.new('RGB',(320,320),'red'))
     assert len(result)==1 and result[0]['label']=='fire' and result[0]['score']==pytest.approx(.6)
+    assert result[0]['verification_score']==.99
+    detector.verifier.value=.3
+    assert detector.detect(Image.new('RGB',(320,320),'red'))==[]

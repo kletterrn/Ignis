@@ -17,7 +17,7 @@ WEIGHTS_URL = "https://github.com/pyronear/pyro-vision/releases/download/v0.2.0/
 WEIGHTS_SHA256 = "e536564ef97d2aed90a7572f08ca752087fc10f7c3544911edca70f473d55fc7"
 
 class Classifier:
-    """Retired crop classifier, retained only for reproducible before/after evaluation."""
+    """Historical crop baseline and whole-ROI flame verifier; outputs are uncalibrated."""
     def __init__(self, root="data/models"):
         import torch
         from holocron.models import rexnet1_0x
@@ -35,11 +35,11 @@ class Classifier:
         self.to_tensor = ToTensor()
         self.normalize = Normalize([.485,.456,.406],[.229,.224,.225])
 
-    def score(self, image):
+    def score(self, image, *, multi_crop=True):
         image=image.convert('RGB')
         crops=[image]
         # Overlapping crops preserve small plumes otherwise lost when a large frame is resized.
-        if image.width>=768 and image.height>=512:
+        if multi_crop and image.width>=768 and image.height>=512:
             w,h=image.size
             crops.extend(image.crop((int(x*w),int(y*h),int((x+.5)*w),int((y+.5)*h))) for y in (0,.25,.5) for x in (0,.25,.5))
         # Every crop uses the pretrained PyroVision 256x384 input and normalization.
@@ -116,13 +116,15 @@ class SmokeDetector:
 
 FLAME_URL='https://huggingface.co/fiacecson20/cctv-ai-fire-smoke/resolve/343990e42d99a5d27e9f35fc7c80880dc5f43f45/best.onnx'
 FLAME_SHA256='f2699b753e78be8d392bfa63e64bf102ea3ceb8b6086a59dfd8192b61a0c6fad'
+FLAME_THRESHOLD=.5
+VERIFIER_THRESHOLD=.8
 
 
 class FlameDetector(SmokeDetector):
     """Independent flame branch; this model's weaker smoke class is not used."""
     size=320
     labels=('fire','smoke')
-    minimum_score=.5
+    minimum_score=FLAME_THRESHOLD
     name='CCTV-AI YOLOv8n flame 2026-05-05'
 
     def __init__(self,root='data/models'):
@@ -135,16 +137,28 @@ class FlameDetector(SmokeDetector):
         if hashlib.sha256(path.read_bytes()).hexdigest()!=FLAME_SHA256:raise ValueError('Flame detector checksum mismatch')
         options=ort.SessionOptions();options.intra_op_num_threads=4
         self.net=ort.InferenceSession(str(path),sess_options=options,providers=['CPUExecutionProvider']);self.input=self.net.get_inputs()[0].name
+        self.verifier=Classifier(root)
+        self.device='ONNX Runtime CPU + ReXNet '+self.verifier.device
 
-    def detect(self,image):return [p for p in self._detect(image) if p['label']=='fire']
+    def detect(self,image):
+        confirmed=[];w,h=image.size
+        for p in self._detect(image):
+            if p['label']!='fire':continue
+            x,y,a,b=p['box'];dx=(a-x)*.25;dy=(b-y)*.25
+            crop=image.convert('RGB').crop((max(0,round((x-dx)*w)),max(0,round((y-dy)*h)),min(w,round((a+dx)*w)),min(h,round((b+dy)*h))))
+            score=self.verifier.score(crop,multi_crop=False)
+            if not np.isfinite(score):raise ValueError('Unexpected flame verification output')
+            if score>=VERIFIER_THRESHOLD:confirmed.append({**p,'verification_score':score,'verification_model':'PyroVision ReXNet whole ROI'})
+        return confirmed
 
 
 class CameraDetector:
-    name='Pyronear smoke 2025-07-22 + CCTV-AI flame 2026-05-05'
+    name='Pyronear smoke + CCTV-AI flame + ReXNet ROI confirmation'
     device='ONNX Runtime CPU'
 
     def __init__(self,root='data/models'):
         self.smoke=SmokeDetector(root);self.flame=FlameDetector(root)
+        self.device=self.flame.device
 
     def detect(self,image):return self.smoke.detect(image)+self.flame.detect(image)
 
@@ -174,7 +188,7 @@ class TemporalGate:
             return None
         self.last_positive=second
         for item in sorted(candidates,key=lambda p:p['score'],reverse=True):
-            matches=[t for t,items in self.history if 0<=second-t<=8 and any(p.get('label','smoke')==item.get('label','smoke') and overlap(p['box'],item['box'])>=.1 for p in items)]
+            matches=[t for t,items in self.history if any(p.get('label','smoke')==item.get('label','smoke') and overlap(p['box'],item['box'])>=.1 for p in items)]
             self.hits=max(self.hits,len(matches))
             if len(matches)>=5 and second-min(matches)>=4 and not self.latched:
                 self.latched=True
@@ -242,6 +256,7 @@ class CameraWorker:
                         backoff=min(30,backoff*2); continue
                     job["status"]="running"; self.store.put("jobs",job)
                     fps = cap.get(cv2.CAP_PROP_FPS) or 25
+                    declared_frames=int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) if job['kind']!='rtsp' else 0
                     index = int(job.get("seconds",0)*fps) if job["kind"] != "rtsp" else 0
                     if index: cap.set(cv2.CAP_PROP_POS_FRAMES,index)
                     last = -1
@@ -261,6 +276,10 @@ class CameraWorker:
                                 try: frames.put((float(second),image),timeout=.5); break
                                 except queue.Full: pass
                     cap.release()
+                    if job['kind']!='rtsp' and not self.stop_event.is_set():
+                        job.update(decoded_frames=index,declared_frames=declared_frames)
+                        if declared_frames>0 and declared_frames!=index:
+                            job['decode_warning']=f'Dateikopf: {declared_frames} Frames; dekodiert: {index}. Abdeckung des Dateiendes unsicher.'
                     if job["kind"] != "rtsp": break
                     if self.stop_event.wait(backoff): break
             except Exception:
@@ -286,16 +305,16 @@ class CameraWorker:
                 for region in regions:
                     if region['score']<DETECTION_THRESHOLD:continue
                     a,b,c,d=region['box'];box=(a*image.width,b*image.height,c*image.width,d*image.height)
-                    draw.rectangle(box,outline='#ff8833',width=3);draw.text((box[0],box[1]),f"smoke {region['score']:.2f}",fill='#ff8833')
+                    draw.rectangle(box,outline='#ff8833',width=3);draw.text((box[0],box[1]),f"{region.get('label','smoke')} {region['score']:.2f}",fill='#ff8833')
                 annotated.save(preview,quality=85)
                 job['preview_path']=str(preview)
                 job.update(frames=job["frames"]+1,seconds=second+1,score=score,regions=regions,model=self.classifier.name,confirmation_samples=gate.hits,
-                           alert_latched=gate.latched,device=self.classifier.device,status="running",updated_at=utcnow(),throughput_fps=(job["frames"]-initial_frames+1)/max(time.perf_counter()-started,.001))
+                           alert_latched=gate.latched,device=self.classifier.device,status="running",updated_at=utcnow(),throughput_fps=(job["frames"]-initial_frames)/max(time.perf_counter()-started,.001))
                 self.store.put("jobs",job)
                 if alert:
-                    key=hashlib.sha256(f"{job['id']}:{int(second)//60}".encode()).hexdigest()[:32]
+                    key=hashlib.sha256(f"{job['id']}:{second:.6f}:{alert.get('label','smoke')}".encode()).hexdigest()[:32]
                     path=self.root/(key+".jpg");annotated.save(path,quality=90)
-                    self.store.put("evidence",{"id":key,"job_id":job["id"],"observed_at":utcnow(),"acquired_at":job.get("acquired_at"),"offset_seconds":second,"model_score":score,"model":self.classifier.name,"regions":regions,"path":str(path),"review_state":"pending","georeferenced":False,"trigger":"spatial_temporal_"+alert.get('label','smoke')})
+                    self.store.put("evidence",{"id":key,"job_id":job["id"],"observed_at":utcnow(),"acquired_at":job.get("acquired_at"),"offset_seconds":second,"model_score":alert['score'],"model":self.classifier.name,"regions":regions,"path":str(path),"review_state":"pending","georeferenced":False,"trigger":"spatial_temporal_"+alert.get('label','smoke')})
             was_stopped=self.stop_event.is_set()
             self.stop_event.set();producer.join(timeout=12)
             job["status"]="failed" if producer_error else "stopped" if was_stopped else "completed"

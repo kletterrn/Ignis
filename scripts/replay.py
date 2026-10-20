@@ -51,6 +51,8 @@ def main():
         post(f"incidents/{incident['id']}/withdraw",{})
         assert client.get('/api/v1/evidence/'+evidence['id']).status_code==404
         report={'status':'passed','frames':job['frames'],'device':job['device'],'worker_throughput_fps':job['throughput_fps'],'automatic_evidence_count':len(app.store.all('evidence'))-1,'manual_evidence_count':1,'reviewed_boundaries':2,'added_area_ha':change['added_area_ha'],'publication':'isolated only; no fixture sent to cloud','geometry':'synthetic, unrelated to video location','input_sha256':hashlib.sha256(video.read_bytes()).hexdigest(),'input_kind':'real video' if args.fire_video else 'accelerated archive replay'}
-        Path('outputs').mkdir(exist_ok=True);Path('outputs/replay.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2))
+        Path('outputs').mkdir(exist_ok=True)
+        if args.fire_video:shutil.copy2(app.store.all('evidence')[0]['path'],'outputs/camera-replay-evidence.jpg')
+        Path('outputs/replay.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2))
 
 if __name__=='__main__':main()

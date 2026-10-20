@@ -1,0 +1,22 @@
+{
+  "status": "rejected_partial_posthoc",
+  "reason": "Applying the ROI verifier to smoke removed all alerts in three previously detected positive smoke clips. Production smoke rule left unchanged.",
+  "production_reference": "camera_refinement_results.json",
+  "cases": [
+    {
+      "name": "firesense_smoke_testpos04.820",
+      "production_alerts": 1,
+      "trial_alerts": 0
+    },
+    {
+      "name": "firesense_smoke_testpos10.826",
+      "production_alerts": 1,
+      "trial_alerts": 0
+    },
+    {
+      "name": "firesense_smoke_testpos11.827",
+      "production_alerts": 1,
+      "trial_alerts": 0
+    }
+  ]
+}

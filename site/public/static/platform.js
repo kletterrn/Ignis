@@ -18,13 +18,13 @@ function platformLayers(){
 }
 function renderIncidents(){
   const list=$('incident-list');list.replaceChildren();
-  if(!incidents.length)list.append(element('p','','Noch keine veröffentlichten Brandereignisse. Fehlende Einträge bedeuten keine Entwarnung.'));
+  if(!incidents.length)list.append(element('p','','Keine freigegebenen Ereignisse · keine Entwarnung.'));
   for(const incident of incidents){const button=element('button',selectedIncident===incident.id?'incident selected':'incident',incident.title);button.type='button';button.onclick=()=>{selectedIncident=selectedIncident===incident.id?null:incident.id;renderIncidents();renderSnapshot();const p=snapshot().find(x=>x.incident_id===incident.id);if(p&&map){const pts=p.geometry.type==='Polygon'?p.geometry.coordinates[0]:p.geometry.coordinates[0][0];map.fitBounds(pts.reduce((b,c)=>b.extend(c),new maplibregl.LngLatBounds()),{padding:70,maxZoom:14});}};list.append(button);}
 }
 function renderSnapshot(){
   const current=snapshot(),panel=$('incident-detail');panel.replaceChildren();
   $('timeline-date').textContent=timelineTimes.length?dateText(timelineTimes[Number($('timeline').value)]):'Keine Flächenbeobachtung';
-  if(!current.length)panel.append(element('p','','Für diesen Zeitpunkt ist keine geprüfte Fläche verfügbar.'));
+  if(!current.length)panel.append(element('p','','Keine geprüfte Fläche für diesen Zeitpunkt.'));
   for(const p of current){const incident=incidents.find(x=>x.id===p.incident_id);const title=element('h3','',incident?.title||'Ereignis');panel.append(title,element('p','',incident?.description||''),element('strong','',`${number.format(p.burned_area_ha)} ha · ${p.footprint_kind==='active'?'aktive Fläche':'kartierte verbrannte Fläche'}`),element('p','',`Umrissfläche einschließlich Inseln: ${number.format(p.enclosed_area_ha)} ha · ${dateText(p.acquired_at)}`),element('p','',`${p.method} · ${p.resolution_m?`${p.resolution_m} m Quellauflösung`:'Auflösung unbekannt'} · geprüft · Genauigkeit nicht unabhängig nachgewiesen`),element('p','',p.provenance));const change=p.change;panel.append(element('p','',change?.status==='measured'?`Neu kartiert: ${number.format(change.added_area_ha)} ha in ${number.format(change.elapsed_hours)} Std. · ${change.dominant_sector?`größter Zuwachs ${change.dominant_sector}`:'keine eindeutige Hauptrichtung'}`:'Bewegung kann nicht bestimmt werden.'));
   }
   for(const e of publicEvidence.filter(e=>!selectedIncident||e.incident_id===selectedIncident)){const img=document.createElement('img');img.src=apiUrl('/api/v1/evidence/'+e.id);img.alt='Vom Operator freigegebener Kamerabeleg';img.style.maxWidth='220px';img.style.borderRadius='8px';panel.append(img);}

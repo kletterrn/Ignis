@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "frames": 21,
+  "device": "ONNX Runtime CPU + ReXNet cpu",
+  "worker_throughput_fps": 2.7558305727469503,
+  "automatic_evidence_count": 1,
+  "manual_evidence_count": 1,
+  "reviewed_boundaries": 2,
+  "added_area_ha": 15.948012795479276,
+  "publication": "isolated only; no fixture sent to cloud",
+  "geometry": "synthetic, unrelated to video location",
+  "input_sha256": "6176a6ae902d83305b3c8941f3ffe63bb61956fb4d3a541d96d1a700df922091",
+  "input_kind": "real video"
+}

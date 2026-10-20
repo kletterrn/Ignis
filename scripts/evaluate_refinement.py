@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 import math
+import inspect
 import time
 import zipfile
 from pathlib import Path
@@ -12,7 +13,7 @@ import httpx
 from PIL import Image
 
 from scripts.evaluate_camera import fetch,confusion,TemporalGate as StageOneGate
-from services.camera import CameraDetector,TemporalGate,DETECTOR_SHA256,FLAME_SHA256,DETECTION_THRESHOLD
+from services.camera import CameraDetector,TemporalGate,DETECTOR_SHA256,FLAME_SHA256,FLAME_THRESHOLD,VERIFIER_THRESHOLD,WEIGHTS_SHA256,SmokeDetector,DETECTION_THRESHOLD
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -20,7 +21,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--fetch',action='store_true');args=parser.parse_args()
     protocol_path=ROOT/'validation/camera_refinement_protocol.json';protocol=json.loads(protocol_path.read_text())
-    assert protocol['smoke_model_sha256']==DETECTOR_SHA256 and protocol['flame_model_sha256']==FLAME_SHA256 and protocol['threshold']==DETECTION_THRESHOLD
+    assert protocol['smoke_model_sha256']==DETECTOR_SHA256 and protocol['flame_model_sha256']==FLAME_SHA256 and protocol['threshold']==DETECTION_THRESHOLD and protocol['flame_threshold']==FLAME_THRESHOLD and protocol['verifier_sha256']==WEIGHTS_SHA256 and protocol['verifier_threshold']==VERIFIER_THRESHOLD
     root=ROOT/'data/camera-refinement';root.mkdir(parents=True,exist_ok=True)
     if args.fetch:
         manifest=fetch(protocol,root)
@@ -57,20 +58,42 @@ def main():
         temporary=checkpoint.with_suffix('.part')
         temporary.write_text(json.dumps({'protocol_sha256':manifest['protocol_sha256'],'model_code_sha256':code_sha,'completed':len(clips),'total':len(manifest['videos']),'archive_rows':archive_rows,'elapsed':elapsed,'inferred':inferred,'clips':clips}),encoding='utf-8')
         temporary.replace(checkpoint)
+    archive_cache={}
+    if protocol.get('archive_detection_cache'):
+        cache=json.loads((ROOT/protocol['archive_detection_cache']).read_text())
+        assert cache['models']=={'smoke_sha256':DETECTOR_SHA256,'flame_sha256':FLAME_SHA256}
+        assert all(r['before']==r['after'] for r in cache['archive_samples'])
+        archive_cache={r['source']:r for r in cache['archive_samples']}
+    smoke_cache={}
+    cache_path=ROOT/protocol.get('smoke_score_cache','nonexistent')
+    if cache_path.exists():
+        prior=json.loads(cache_path.read_text())
+        assert prior['smoke_model_sha256']==DETECTOR_SHA256 and prior['smoke_code_sha256']==hashlib.sha256(inspect.getsource(SmokeDetector).encode()).hexdigest()
+        smoke_cache={c['name']:c for c in prior['clips']}
     for sample in manifest['samples']:
         assert hashlib.sha256(Path(sample['path']).read_bytes()).hexdigest()==sample['sha256']
         if any(r['source']==sample['source'] and r['sha256']==sample['sha256'] for r in archive_rows):continue
-        with Image.open(sample['path']) as image:
-            start=time.perf_counter();smoke=detector.smoke.detect(image);flame=detector.flame.detect(image);elapsed+=time.perf_counter()-start;inferred+=1
-        archive_rows.append({k:v for k,v in {**sample,'before':any(p['score']>=.5 for p in smoke),'after':any(p['score']>=.5 for p in smoke+flame),'regions':smoke+flame}.items() if k!='path'})
+        cached=archive_cache.get(sample['source'])
+        if cached:
+            assert cached['sha256']==sample['sha256']
+            # No raw flame proposals existed; adding a verifier cannot create any.
+            assert not any(p['label']=='fire' for p in cached['regions'])
+            regions=cached['regions']
+            archive_rows.append({**cached,'regions':regions,'after':any(p['score']>=.5 for p in regions)})
+        else:
+            with Image.open(sample['path']) as image:
+                start=time.perf_counter();smoke=detector.smoke.detect(image);flame=detector.flame.detect(image);elapsed+=time.perf_counter()-start;inferred+=1
+            archive_rows.append({k:v for k,v in {**sample,'before':any(p['score']>=.5 for p in smoke),'after':any(p['score']>=.5 for p in smoke+flame),'regions':smoke+flame}.items() if k!='path'})
         save_progress()
         if len(archive_rows)%10==0:print('Archive progress',len(archive_rows),'/',len(manifest['samples']),flush=True)
     print('Archive',confusion(archive_rows,'before'),confusion(archive_rows,'after'),flush=True)
-    for item in manifest['videos']:
+    ordered=sorted(manifest['videos'],key=lambda c:c['name'] not in protocol['fresh_holdout_video_names'])
+    for item in ordered:
         assert hashlib.sha256(Path(item['path']).read_bytes()).hexdigest()==item['sha256']
         if any(c['name']==item['name'] and c['sha256']==item['sha256'] for c in clips):continue
         cap=cv2.VideoCapture(item['path']);fps=cap.get(cv2.CAP_PROP_FPS);total=int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         if not cap.isOpened() or not math.isfinite(fps) or fps<=0:raise ValueError('Invalid video')
+        prior=smoke_cache.get(item['name']);cached_samples={r['second']:r for r in prior['samples']} if prior and prior['sha256']==item['sha256'] else {}
         before_gate=StageOneGate();after_gate=TemporalGate();before=[];after=[];samples=[];index=0;last=-1
         while True:
             ok,frame=cap.read()
@@ -78,11 +101,14 @@ def main():
             second=int(index/fps);index+=1
             if second==last:continue
             last=second;image=Image.fromarray(cv2.cvtColor(frame,cv2.COLOR_BGR2RGB))
-            start=time.perf_counter();smoke=detector.smoke.detect(image);flame=detector.flame.detect(image);elapsed+=time.perf_counter()-start;inferred+=1
+            start=time.perf_counter()
+            smoke=[r for r in cached_samples[second]['regions'] if r['label']=='smoke'] if second in cached_samples else detector.smoke.detect(image)
+            flame=detector.flame.detect(image)
+            if second not in cached_samples:elapsed+=time.perf_counter()-start;inferred+=1
             if before_gate.update(second,smoke):before.append(second)
             alert=after_gate.update(second,smoke+flame)
             if alert:after.append({'second':second,'label':alert['label']})
-            samples.append({'second':second,'smoke_score':max((p['score'] for p in smoke),default=0.),'flame_score':max((p['score'] for p in flame),default=0.)})
+            samples.append({'second':second,'smoke_score':max((p['score'] for p in smoke),default=0.),'flame_score':max((p['score'] for p in flame),default=0.),'regions':smoke+flame})
         cap.release()
         if not index:raise ValueError('No decodable frames '+item['name'])
         clip={k:v for k,v in {**item,'duration_seconds':index/fps,'reported_frames':total,'decoded_frames':index,'decode_status':'complete' if index==total else 'header_count_mismatch','before_alert_seconds':before,'after_alerts':after,'samples':samples}.items() if k!='path'}
@@ -91,13 +117,14 @@ def main():
         save_progress()
     def metrics(group):
         positives=[c for c in group if c['fire']];negatives=[c for c in group if not c['fire']];hours=sum(c['duration_seconds'] for c in negatives)/3600
-        result={'clips':len(group),'positive_clips':len(positives),'negative_hours':hours}
+        result={'clips':len(group),'positive_clips':len(positives),'negative_clips':len(negatives),'negative_hours':hours}
         for key,alerts in [('before','before_alert_seconds'),('after','after_alerts')]:
             count=sum(len(c[alerts]) for c in negatives)
-            result[key]={'positive_clips_alerted':sum(bool(c[alerts]) for c in positives),'false_alerts':count,'false_alerts_per_hour':count/hours if hours else None,'zero_alert_one_sided_95pct_upper_per_hour':-math.log(.05)/hours if hours and count==0 else None}
+            tp=sum(bool(c[alerts]) for c in positives);fp=sum(bool(c[alerts]) for c in negatives)
+            result[key]={'positive_clips_alerted':tp,'negative_clips_alerted':fp,'precision':tp/(tp+fp) if tp+fp else None,'recall':tp/len(positives) if positives else None,'false_alerts':count,'false_alerts_per_hour':count/hours if hours else None,'zero_alert_one_sided_95pct_upper_per_hour':-math.log(.05)/hours if hours and count==0 else None}
         return result
     original={'non_fire_patrolbot_onboard','cleaner','coolerbot','rover','icra','hand_held_camera_wildfire','hand_held_batteries_night'}
-    report={'status':'completed','protocol_sha256':manifest['protocol_sha256'],'models':{'smoke_sha256':DETECTOR_SHA256,'flame_sha256':FLAME_SHA256},'archive':{'frames':len(archive_rows),'before':confusion(archive_rows,'before'),'after':confusion(archive_rows,'after')},'all_video':metrics(clips),'new_video':metrics([c for c in clips if c['name'] not in original]),'development_regressions':metrics([c for c in clips if c['name'] in original]),'throughput_fps':inferred/elapsed,'device':detector.device,'limitations':protocol['limitations'],'archive_samples':archive_rows,'video_clips':clips}
+    report={'status':'completed','protocol_sha256':manifest['protocol_sha256'],'models':{'smoke_sha256':DETECTOR_SHA256,'flame_sha256':FLAME_SHA256,'verifier_sha256':WEIGHTS_SHA256},'archive':{'frames':len(archive_rows),'before':confusion(archive_rows,'before'),'after':confusion(archive_rows,'after')},'all_video':metrics(clips),'fresh_holdout':metrics([c for c in clips if c['name'] in protocol['fresh_holdout_video_names']]),'per_dataset':{group:metrics([c for c in clips if c.get('dataset','FURG')==group]) for group in ('FURG','FIRESENSE smoke','FIRESENSE fire')},'new_video':metrics([c for c in clips if c['name'] not in original]),'development_regressions':metrics([c for c in clips if c['name'] in original]),'throughput_fps':inferred/elapsed,'throughput_scope':'uncached video inference only; unchanged smoke predictions reused where available','device':detector.device,'limitations':protocol['limitations'],'archive_samples':archive_rows,'video_clips':clips}
     (ROOT/'validation/camera_refinement_results.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     print(json.dumps({k:v for k,v in report.items() if k not in ('archive_samples','video_clips')},indent=2),flush=True)
 

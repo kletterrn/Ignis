@@ -58,13 +58,16 @@ Keine kostenpflichtigen Dienste oder Abonnements werden automatisch aktiviert. G
 
 ## Validierung und Grenzen
 
-Siehe [VALIDATION.md](VALIDATION.md) für Ergebnisse. Der lokale Worker verwendet jetzt einen per SHA256 fixierten Pyronear-YOLO11s-Rauchdetektor mit Bildausschnitten und räumlicher Bestätigung über fünf Samples / mindestens vier Sekunden. Ein Hinweis pro Episode; Wiederbereitschaft nach 30 Sekunden ohne positiven Befund. Das frühere ReXNet bleibt nur für Vergleichsmessungen erhalten. **Die Abnahme ist nicht bestanden:** Auf 66 unabhängigen Archivbildern sanken Fehlpositive von 18 auf 1, gleichzeitig sank die Raucherkennung von 25/34 auf 15/34. Beide positiven Videoclips blieben ohne automatischen Hinweis. Rohscores sind keine Wahrscheinlichkeiten; manuelle Prüfung und Belegsicherung sind erforderlich. Kein Alarm ist keine Entwarnung. Große Bilder erreichen auf dieser CPU nur ungefähr 0,49 Bilder/s; Jobstatus zeigt Durchsatz und verworfene RTSP-Samples.
+Siehe [VALIDATION.md](VALIDATION.md) und den [vollständigen Kamerabericht](validation/CAMERA_REFINEMENT.md). Der Worker kombiniert den fixierten Pyronear-Rauchdetektor mit einem separaten Flammenmodell. Flammenkandidaten benötigen zusätzlich eine ReXNet-Prüfung des Bildausschnitts. Fünf von acht räumlich passenden Samples derselben Klasse über mindestens vier Sekunden erzeugen einen lokalen Prüfhinweis; Wiederbereitschaft nach 30 Sekunden ohne positiven Befund. Rohscores sind keine Wahrscheinlichkeiten.
+
+Auf **72 echten Videos** stieg die Erkennung positiver Clips von **11/41 auf 26/41**; fünf Fehlalarme blieben über **21,13 Minuten Negativmaterial** bestehen. Auf den 37 reservierten Clips: 5/21 →11/21 positive Clips, drei Fehlalarme unverändert. Schwacher Rauch bleibt schlecht erkannt. **Keine Einsatzfreigabe:** kein Alarm ist keine Entwarnung; Operatorprüfung bleibt nötig. Der Status zeigt Durchsatz, verworfene RTSP-Samples und Abweichungen zwischen gemeldeten und dekodierten Frames. Große Kameraaufnahmen bleiben auf dieser CPU unter 1 Bild/s.
 
 ```powershell
-uv run python -m scripts.evaluate_camera --fetch # vier Ereignisse + sieben echte Videos, beide Modelle
+uv run python -m scripts.evaluate_refinement --fetch # 72 Videos + vier zusätzliche Kameraereignisse
+uv run python -m scripts.evaluate_camera --fetch # historische erste Messung
 uv run python -m scripts.fetch_validation
 uv run python -m scripts.benchmark data/validation/manifest.csv
-uv run python -m scripts.replay
+uv run python -m scripts.replay --fire-video data/camera-refinement/furg/hand_held_batteries_night.mp4
 uv run python -m scripts.validate_perimeter kandidat.geojson referenz.geojson
 ```
 

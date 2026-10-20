@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "source": "FIRESENSE smoke/neg/testneg04.810.avi",
+  "input_sha256": "68260909bd93d1bfe07accf6ef4e90dcad4fd17e96531b956d10ff8df38311cf",
+  "sampled_frames": 114,
+  "decoded_frames": 2840,
+  "declared_frames": 2840,
+  "automatic_evidence_count": 0,
+  "device": "ONNX Runtime CPU + ReXNet cpu",
+  "worker_throughput_fps": 3.106225384486448,
+  "publication": "none; isolated local store"
+}
