@@ -14,6 +14,7 @@ from flask import Flask, jsonify, render_template, request, send_file
 from werkzeug.exceptions import HTTPException
 
 from providers.nasa_firms import AREA, SATELLITE_SOURCES
+from services.assets import asset_url
 from services.collector import collect, flush_outbox
 from services.geometry import compare, measure, polygon, timestamp
 from services.store import Store, utcnow
@@ -21,6 +22,7 @@ from services.store import Store, utcnow
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 app = Flask(__name__)
+app.jinja_env.globals['asset_url'] = asset_url
 app.config.update(MAX_CONTENT_LENGTH=256*1024*1024, DATA_DIR=str(BASE_DIR/"data"))
 store = Store(Path(app.config["DATA_DIR"])/"ignis.sqlite")
 CSRF = secrets.token_urlsafe(32)

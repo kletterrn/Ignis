@@ -2,7 +2,7 @@ name: Deploy public dashboard to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ['static/**', 'templates/index.html', 'scripts/prepare_site.py', 'providers/nasa_firms.py', '.github/workflows/pages.yml']
+    paths: ['static/**', 'templates/index.html', 'scripts/prepare_site.py', 'services/assets.py', 'providers/nasa_firms.py', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
